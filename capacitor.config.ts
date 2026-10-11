@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
-  appId: 'com.hema.eurokick2d',
-  appName: 'EuroKick 2D',
+  appId: 'com.hema.football2027',
+  appName: 'Football 2027 Arena',
   webDir: 'dist',
-  android: { backgroundColor: '#07131f' }
+  android: { backgroundColor: '#07111d' }
 };
 export default config;

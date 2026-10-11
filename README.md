@@ -1,29 +1,22 @@
-# EuroKick 2D
+# Football 2027 Arena
 
-A mobile-first 2D football arcade starter built with HTML Canvas, Vite, and Capacitor for Android.
+A mobile-first 2D arcade football game inspired by the broad genre of fast 1v1 head-to-head football games. It uses original Canvas-drawn characters and UI, not Head Ball 2 assets or branding.
 
 ## Modes
-- Quick match against AI (offline)
-- Two players on the same phone
-- Online room-code screen is currently a placeholder; real online play requires Firebase Realtime Database integration and security rules.
+- Solo vs computer (offline after the app is installed)
+- Local two-player mode on one device
+- Online private room using PeerJS WebRTC data channels (requires both devices to have internet and a browser/WebView with WebRTC support)
 
-## Teams
-Real Madrid, Barcelona, Manchester City, Liverpool, Arsenal, Manchester United, Bayern Munich, Borussia Dortmund, Paris Saint-Germain, Juventus. This is a curated 2026/27-themed selection, not an official ranking. Names are text-only; no official club crests or licensed player assets are included.
-
-## Run locally
-```bash
-npm install
-npm run dev
-```
+Online rooms use the free PeerJS Cloud signaling service by default. Peer-to-peer connection can fail on networks that require a TURN relay; if that happens, a custom signaling/TURN service is needed.
 
 ## Build Android APK
-Requires Node.js 20+, Java 17, and Android SDK via GitHub Actions:
-1. Open the repository's Actions tab.
-2. Select **Build Android APK**.
-3. Press **Run workflow** (or push a commit to main).
-4. Download the `EuroKick2D-debug-apk` artifact from the completed run.
+GitHub Actions automatically builds on each push to `main`, or manually:
+1. Open the **Actions** tab.
+2. Choose **Build Android APK**.
+3. Choose **Run workflow**.
+4. After it finishes successfully, download **Football2027-debug-apk** from **Artifacts**.
 
-The workflow creates the Android project if missing, syncs Capacitor, and builds a debug APK.
+The workflow installs TypeScript (required by `capacitor.config.ts`), builds the Vite bundle, creates the Android platform, syncs it and compiles a debug APK.
 
-## Current limitation
-Online room-code multiplayer is not connected to a real server yet. Offline AI and same-device play are available in the starter project.
+## Gameplay
+90-second matches, jump, kick, a super move on cooldown, three character styles, and a team-color selector. Clubs are represented only by text names/colors; official badges and player likenesses are not included.
