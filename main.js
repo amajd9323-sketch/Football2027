@@ -300,7 +300,7 @@ function startMatch(){
   renderControls();goScreen("matchScreen");resizeCanvas();
   playSound("whistle");lastFrame=performance.now();accumulator=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
 }
-function stopLoop(){cancelAnimationFrame(raf);started=false;paused=false;}
+function stopLoop(){cancelAnimationFrame(raf);started=false;paused=false;clearMatchInputs();try{if(document.fullscreenElement&&document.exitFullscreen){const exit=document.exitFullscreen();if(exit&&typeof exit.catch==="function")exit.catch(()=>{});}}catch{}try{if(screen.orientation&&typeof screen.orientation.unlock==="function")screen.orientation.unlock();}catch{}}
 function frame(now){
   if(!started||$("#matchScreen").hidden)return;
   let elapsed=Math.min(.1,(now-lastFrame)/1000);lastFrame=now;
@@ -371,7 +371,7 @@ function updateGame(dt){
     const digit=Math.ceil(game.countdown);
     $("#countdownOverlay").hidden=game.countdown<=0;
     $("#countdownOverlay").textContent=String(Math.max(1,digit));
-    if(game.countdown<=0){game.countdown=0;game.ball.y=-24;game.ball.vx=0;game.ball.vy=0;playSound("whistle");}
+    if(game.countdown<=0){game.countdown=0;game.ball.y=CONFIG.physics.ballRadius+8;game.ball.vx=0;game.ball.vy=0;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;playSound("whistle");}
     return;
   }
   $("#countdownOverlay").hidden=true;
