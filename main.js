@@ -891,9 +891,16 @@ function setMusic(on){
   const notes=[392,494,587,494,440,523,659,523];
   musicTimer=setInterval(()=>{if(saved.music&&saved.sound){tone(notes[musicIndex%notes.length],.26,"sine",.012);musicIndex++;}},650);
 }
+let matchToastTimer=0;
 function showToast(message){
-  const el=$("#eventOverlay");
-  if($("#matchScreen").hidden){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.querySelector(".app").appendChild(t);}t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1900);}
-  else{el.textContent=message;el.hidden=false;setTimeout(()=>{if(game&&game.celebration<=0)el.hidden=true;},1300);}
+  if($("#matchScreen").hidden){
+    let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.querySelector(".app").appendChild(t);}
+    t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1900);
+  }else{
+    const t=$("#matchToast");if(!t)return;
+    t.textContent=message;t.hidden=false;t.classList.add("show");
+    if(matchToastTimer)clearTimeout(matchToastTimer);
+    matchToastTimer=setTimeout(()=>{t.classList.remove("show");t.hidden=true;matchToastTimer=0;},1600);
+  }
 }
 setupDebugControls();applyScale();applyControlOpacity();updateProfileUI();renderSetup();setMusic(saved.music);
