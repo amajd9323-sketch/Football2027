@@ -221,7 +221,6 @@ function renderControls(){
   if(saved.swap)$("#gameControls").classList.add("swapped");else $("#gameControls").classList.remove("swapped");
   $("#gameControls").querySelectorAll("[data-action]").forEach(btn=>{
     const player=Number(btn.dataset.player),action=btn.dataset.action;
-    /* كل زر يحتفظ بكل أصابع الضغط؛ رفع إصبع لا يلغي ضغط إصبع آخر. */
     const activePointerIds=new Set();
     const syncInput=()=>{
       const held=activePointerIds.size>0;
@@ -229,22 +228,47 @@ function renderControls(){
       if(action==="left"||action==="right"||action==="jump"||action==="kick")inputs[player][action]=held;
       else if(action==="power")inputs[player].power=held?btn.dataset.power:"";
     };
+    const press=(id)=>{
+      if(activePointerIds.has(id))return;
+      activePointerIds.add(id);syncInput();
+      getAudio();
+      if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
+    };
+    const release=(id)=>{
+      if(!activePointerIds.has(id))return;
+      activePointerIds.delete(id);syncInput();
+    };
     const down=e=>{
       e.preventDefault();
-      if(!game||game.countdown>0||game.celebration>0)return;
-      if(activePointerIds.has(e.pointerId))return;
-      activePointerIds.add(e.pointerId);syncInput();getAudio();
-      if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
+      if(!game||paused||finished)return;
+      /* لا نحذف اللمسة أثناء العد التنازلي؛ تظهر ضغطة الزر وتصل المدخلات عند بدء اللعب. */
+      press(e.pointerId);
       try{btn.setPointerCapture(e.pointerId);}catch{}
     };
-    const up=e=>{
-      if(!activePointerIds.has(e.pointerId))return;
-      e.preventDefault();activePointerIds.delete(e.pointerId);syncInput();
-    };
-    btn.addEventListener("pointerdown",down);
-    btn.addEventListener("pointerup",up);
-    btn.addEventListener("pointercancel",up);
-    btn.addEventListener("lostpointercapture",up);
+    const up=e=>{if(e.cancelable)e.preventDefault();release(e.pointerId);};
+    if(window.PointerEvent){
+      btn.addEventListener("pointerdown",down,{passive:false});
+      btn.addEventListener("pointerup",up,{passive:false});
+      btn.addEventListener("pointercancel",up,{passive:false});
+      btn.addEventListener("lostpointercapture",up);
+    }else{
+      btn.addEventListener("touchstart",e=>{
+        e.preventDefault();if(!game||paused||finished)return;
+        for(let i=0;i<e.changedTouches.length;i++)press("touch-"+e.changedTouches[i].identifier);
+      },{passive:false});
+      const touchRelease=e=>{
+        e.preventDefault();
+        for(let i=0;i<e.changedTouches.length;i++)release("touch-"+e.changedTouches[i].identifier);
+      };
+      btn.addEventListener("touchend",touchRelease,{passive:false});
+      btn.addEventListener("touchcancel",touchRelease,{passive:false});
+      btn.addEventListener("mousedown",e=>{
+        if(e.button!==0||!game||paused||finished)return;
+        e.preventDefault();press("mouse");
+      });
+      window.addEventListener("mouseup",()=>release("mouse"));
+    }
+    btn.addEventListener("contextmenu",e=>e.preventDefault());
   });
 }
 // تحكم لوحة المفاتيح للاختبار على الحاسوب أو جهاز Android مع لوحة مفاتيح.
