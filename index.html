@@ -1,108 +1,125 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#07111d">
-  <meta name="description" content="Football 2027 Arena — fast 1v1 arcade football">
-  <title>Football 2027 Arena</title>
-  <link rel="stylesheet" href="./style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07111d">
+<meta name="description" content="Football 2027 Arena — Roksi × Hema original 1v1 arcade football">
+<title>Football 2027 Arena — Roksi × Hema</title>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <div class="brand-mark"><img src="./assets/game-logo.webp" alt="شعار اللعبة"></div>
-    <div class="brand-copy"><b>FOOTBALL <i>2027</i></b><small>ARCADE FOOTBALL ARENA</small></div>
-    <div class="net-pill"><span class="pulse"></span><span id="netBadge">جاهز للعب</span></div>
-  </header>
+<header class="topbar">
+  <div class="brand-mark"><img src="./assets/game-logo.webp" alt="شعار روكسي وهيما"></div>
+  <div class="brand-copy"><b>FOOTBALL <i>2027</i></b><small>ROKSI × HEMA • ARCADE ARENA</small></div>
+  <div class="coin-pill"><span>🪙</span><b id="coinCount">0</b></div>
+  <button id="settingsOpen" class="round-icon" aria-label="الإعدادات">⚙</button>
+</header>
 
-  <main id="menuScreen">
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">SEASON 2026 / 27</span>
-        <h1>ملعبك.<br><em>قوانينك.</em></h1>
-        <p>واجه الكمبيوتر، العب مع صديقك، أو تحدّاه أونلاين بكود غرفة.</p>
-        <div class="hero-meta"><span>⚡ حركات خاصة</span><span>⏱ 90 ثانية</span><span>⚽ 1 ضد 1</span></div>
-      </div>
-      <div class="hero-art" aria-label="Roksi وريال مدريد ضد Hema وBarcelona">
-        <div class="orb orb-a"></div><div class="orb orb-b"></div>
-        <img class="hero-person hero-roksi" src="./assets/roksi.webp" alt="">
-        <div class="hero-logo-wrap"><img class="hero-logo" src="./assets/game-logo.webp" alt="شعار كلاسيكو روكسي وهيما"></div>
-        <img class="hero-person hero-hema" src="./assets/hema.webp" alt="">
-        <div class="hero-ball">⚽</div><div class="hero-spark">✦</div>
-      </div>
-    </section>
-
-    <section class="menu-layout">
-      <div class="section-heading"><div><span class="eyebrow">GAME MODES</span><h2>اختر المواجهة</h2></div><span class="small-tag">1V1 ARENA</span></div>
-      <div class="mode-grid">
-        <button class="mode-card chosen" data-mode="ai"><span class="mode-icon">🤖</span><span class="mode-text"><b>ضد الكمبيوتر</b><small>أوفلاين • متاح دائمًا</small></span><span class="mode-arrow">↙</span></button>
-        <button class="mode-card" data-mode="local"><span class="mode-icon">👥</span><span class="mode-text"><b>لاعبان على الهاتف</b><small>تحدّي مباشر على نفس الجهاز</small></span><span class="mode-arrow">↙</span></button>
-        <button class="mode-card online-mode" data-mode="online"><span class="mode-icon">🌐</span><span class="mode-text"><b>غرفة أونلاين</b><small>اتصال مباشر عبر الإنترنت</small></span><span class="mode-arrow">↙</span></button>
-      </div>
-
-      <div id="onlinePanel" class="online-panel" hidden>
-        <div class="section-heading compact"><div><span class="eyebrow">PRIVATE MATCH</span><h2>العب مع صديقك</h2></div><span class="online-dot">● ONLINE</span></div>
-        <p class="subcopy">أنشئ كودًا وأرسله لصديقك، أو اكتب كوده للانضمام. يحتاج الهاتفان إلى الإنترنت.</p>
-        <div class="room-row"><input id="roomCode" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="كود الغرفة" aria-label="كود الغرفة"><button class="btn-secondary" id="copyCode" type="button">نسخ</button></div>
-        <div class="room-actions"><button id="createRoom" class="btn-secondary" type="button">＋ إنشاء غرفة</button><button id="joinRoom" class="btn-secondary" type="button">↗ انضمام</button></div>
-        <p id="netStatus" class="net-status" role="status">اتصال مباشر عبر PeerJS؛ بعض الشبكات قد تمنع الاتصال المباشر.</p>
-      </div>
-
-      <div class="settings-panel">
-        <div class="section-heading compact"><div><span class="eyebrow">YOUR LINEUP</span><h2>اختَر ألوان فريقك</h2></div><span class="small-tag">10 CLUBS</span></div>
-        <div class="couple-banner">
-          <div class="couple-profile"><img src="./assets/roksi.webp" alt=""><div><b>ROKSI</b><small>REAL MADRID · QUEEN</small></div></div>
-          <span class="couple-vs">VS</span>
-          <div class="couple-profile couple-profile-hema"><img src="./assets/hema.webp" alt=""><div><b>HEMA / IBI</b><small>BARCELONA · KING</small></div></div>
-          <button id="coupleMatchBtn" class="couple-play" type="button">💞 كلاسيكو الحب</button>
-        </div>
-        <div id="coupleRecord" class="couple-record">سجل المواجهات • روكسي 0 — هيما 0</div>
-        <div class="club-grid" id="teamGrid"></div>
-        <div class="power-select">
-          <div><b>قدرتك الخاصة</b><small>اختر حركة تغيّر المباراة</small></div>
-          <select id="powerSelect" aria-label="اختيار القدرة الخاصة">
-            <option value="rocket">🚀 تسديدة صاروخية</option>
-            <option value="freeze">❄️ تجميد الخصم</option>
-            <option value="giant">💪 عملاق مؤقت</option>
-          </select>
-        </div>
-        <button id="playBtn" class="btn-primary"><span>ابدأ المباراة</span><b>←</b></button>
-        <p class="fine-print">شخصيات ورسومات أصلية. أسماء الأندية لأغراض اختيار الألوان فقط.</p>
-      </div>
-    </section>
-    <footer><b>FOOTBALL 2027 ARENA</b><span>مصممة للهاتف أولًا • العب بطريقتك</span></footer>
-  </main>
-
-  <main id="gameScreen" hidden>
-    <div class="match-top">
-      <button id="exitBtn" class="round-icon" aria-label="الخروج">✕</button>
-      <div class="match-title"><span class="eyebrow">LIVE MATCH</span><b>ARENA SERIES</b></div>
-      <button id="pauseBtn" class="round-icon" aria-label="إيقاف مؤقت">Ⅱ</button>
+<main id="menuScreen" class="screen">
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">OFFLINE ARCADE • 1V1</span>
+      <h1>كلاسيكو الحب<br><em>يبدأ الآن.</em></h1>
+      <p>روكسي مع ريال مدريد ضد هيما / إيبي مع برشلونة. اقفز، اركل الكرة، واستخدم قواك الخاصة!</p>
+      <div class="hero-meta"><span>⚡ 6 قوى</span><span>⏱ 90 ثانية</span><span>🏆 هدف ذهبي</span></div>
     </div>
-    <div class="scoreboard">
-      <div class="team-score left-score"><span class="mini-shirt red-shirt">27</span><div><small id="teamLeft">HOME</small><b id="scoreA">0</b></div></div>
-      <div class="clock"><span>TIME</span><b id="clock">90</b><i></i></div>
-      <div class="team-score right-score"><div><small id="teamRight">AWAY</small><b id="scoreB">0</b></div><span class="mini-shirt blue-shirt">11</span></div>
+    <div class="hero-art">
+      <div class="orb orb-a"></div><div class="orb orb-b"></div>
+      <img class="hero-person hero-roksi" src="./assets/roksi.webp" alt="روكسي">
+      <div class="hero-logo-wrap"><img class="hero-logo" src="./assets/game-logo.webp" alt="شعار روكسي وهيما"></div>
+      <img class="hero-person hero-hema" src="./assets/hema.webp" alt="هيما">
+      <div class="hero-ball">⚽</div>
     </div>
-    <div class="pitch-wrap">
-      <canvas id="pitch" width="1000" height="560" aria-label="ملعب كرة قدم ثنائي الأبعاد"></canvas>
-      <div class="match-flash" id="matchFlash"></div>
-      <div class="pause-cover" id="pauseCover" hidden><strong>إيقاف مؤقت</strong><button id="resumeBtn" class="btn-primary">تابع المباراة</button></div>
-      <div class="finish-cover" id="finishCover" hidden><span class="eyebrow">FULL TIME</span><strong id="finishTitle">انتهت المباراة</strong><div class="finish-score"><b id="finishA">0</b><i>:</i><b id="finishB">0</b></div><p id="finishMessage"></p><button id="rematchBtn" class="btn-primary">إعادة المباراة ←</button><button id="menuBtn" class="btn-secondary">العودة للقائمة</button></div>
-    </div>
-    <div class="control-area">
-      <div class="control-help"><span id="controlHint">تحرّك، اقفز، وسدّد!</span><span class="cooldown" id="cooldownText">⚡ جاهزة</span></div>
-      <div id="singleControls" class="controls single-controls">
-        <div class="dpad"><button data-player="1" data-action="left" aria-label="يسار">◀</button><button data-player="1" data-action="right" aria-label="يمين">▶</button></div>
-        <div class="action-pad"><button data-player="1" data-action="jump" class="jump-btn" aria-label="قفز">↟</button><button data-player="1" data-action="shoot" class="shoot-btn">تسديد</button><button data-player="1" data-action="power" class="power-btn">⚡<small>قوة</small></button></div>
+  </section>
+  <section class="home-layout">
+    <div class="home-left">
+      <div class="section-title"><div><span class="eyebrow">CHOOSE YOUR MATCH</span><h2>اختر نمط اللعب</h2></div><span class="small-tag">OFFLINE</span></div>
+      <button id="vsAiBtn" class="mode-card chosen"><span class="mode-icon">🤖</span><span class="mode-text"><b>ضد الكمبيوتر</b><small>ثلاث درجات صعوبة • دون إنترنت</small></span><span class="arrow">←</span></button>
+      <button id="localBtn" class="mode-card"><span class="mode-icon">👥</span><span class="mode-text"><b>لاعبان على نفس الهاتف</b><small>تحدّي محلي بين شخصين</small></span><span class="arrow">←</span></button>
+      <div class="couple-strip">
+        <div class="mini-profile"><img src="./assets/roksi.webp" alt=""><div><b>ROKSI 👑</b><small>REAL MADRID</small></div></div>
+        <span class="vs">VS</span>
+        <div class="mini-profile"><img src="./assets/hema.webp" alt=""><div><b>HEMA / IBI 👑</b><small>BARCELONA</small></div></div>
       </div>
-      <div id="dualControls" class="controls dual-controls" hidden>
-        <div class="player-pad"><small>PLAYER 1</small><div class="pad-row"><button data-player="1" data-action="left">◀</button><button data-player="1" data-action="right">▶</button><button data-player="1" data-action="jump" class="jump-btn">↟</button><button data-player="1" data-action="shoot" class="shoot-btn">⚽</button><button data-player="1" data-action="power" class="power-btn">⚡</button></div></div>
-        <div class="player-pad second-pad"><small>PLAYER 2</small><div class="pad-row"><button data-player="2" data-action="left">◀</button><button data-player="2" data-action="right">▶</button><button data-player="2" data-action="jump" class="jump-btn">↟</button><button data-player="2" data-action="shoot" class="shoot-btn">⚽</button><button data-player="2" data-action="power" class="power-btn">⚡</button></div></div>
-      </div>
+      <div class="stats-strip"><div><b id="winsStat">0</b><small>انتصارات</small></div><div><b id="playedStat">0</b><small>مباريات</small></div><div><b id="bestStat">0</b><small>أفضل سلسلة</small></div></div>
     </div>
-  </main>
+    <div class="home-right">
+      <div class="section-title"><div><span class="eyebrow">QUICK START</span><h2>جاهز للمباراة؟</h2></div></div>
+      <p class="desc">اختر شخصيتك وقواك، ثم ادخل الملعب. كل شيء في هذه المرحلة يعمل دون اتصال.</p>
+      <button id="startSetupBtn" class="btn-primary"><span>اختيار الشخصية والقوى</span><b>↙</b></button>
+      <button id="dailyRewardBtn" class="reward-card"><span class="reward-icon">🎁</span><span><b>مكافأة الدخول اليومية</b><small id="dailyStatus">استلم 50 عملة مرة كل يوم</small></span><strong>＋50</strong></button>
+      <div class="phase-note"><span>✓</span><p><b>المرحلة الأولى</b><br>أوفلاين • لا تحتاج حسابًا أو سيرفرًا</p></div>
+    </div>
+  </section>
+  <footer><b>FOOTBALL 2027 ARENA</b><span>صُنعت لروكسي وهيما بحب 💞</span></footer>
+</main>
+
+<main id="setupScreen" class="screen" hidden>
+  <div class="page-heading"><button class="back-button" data-back="menuScreen">→ رجوع</button><div><span class="eyebrow">PLAYER SELECT</span><h1>اختر أبطالك</h1></div><div class="coin-mini">🪙 <b id="setupCoins">0</b></div></div>
+  <section class="setup-panel">
+    <div class="section-title"><div><span class="eyebrow">CHARACTER ROSTER</span><h2>الشخصيات الأصلية</h2></div><span class="small-tag">8 PLAYERS</span></div>
+    <div class="assign-row"><button id="assignP1" class="assign-tab active">اختيار اللاعب 1</button><button id="assignP2" class="assign-tab">اختيار اللاعب 2</button></div>
+    <div id="characterGrid" class="character-grid"></div>
+    <div class="selected-info"><span class="selected-color" id="selectedColor"></span><div><b id="selectedName">ROKSI</b><small id="selectedStats">سرعة  • قفز • ركل</small></div><span id="selectedBadge" class="small-tag">QUEEN</span></div>
+  </section>
+  <section class="setup-panel">
+    <div class="section-title"><div><span class="eyebrow">SPECIAL POWERS</span><h2>اختر 3 قوى للمباراة</h2></div><span id="powerCount" class="small-tag">3 / 3</span></div>
+    <p class="desc">كل قوة تُشحن مرة خلال المباراة، ثم تستخدم مرة واحدة. راقب حلقة الشحن أثناء اللعب.</p>
+    <div id="powerGrid" class="power-grid"></div>
+  </section>
+  <section id="aiSetup" class="setup-panel">
+    <div class="section-title"><div><span class="eyebrow">CPU CHALLENGE</span><h2>صعوبة الخصم</h2></div></div>
+    <div class="difficulty-row">
+      <button class="difficulty" data-difficulty="easy"><b>🟢 مبتدئ</b><small>رد فعل هادئ</small></button>
+      <button class="difficulty active" data-difficulty="normal"><b>🟡 محترف</b><small>متوازن</small></button>
+      <button class="difficulty" data-difficulty="hard"><b>🔴 أسطوري</b><small>سريع وعدواني</small></button>
+    </div>
+  </section>
+  <button id="startMatchBtn" class="btn-primary big-primary"><span>دخول الملعب</span><b>⚽</b></button>
+  <p class="fine-print">اللعب أونلاين، الدوريات والترقيات الموسعة محفوظة للمرحلة التالية بموافقتك.</p>
+</main>
+
+<main id="settingsScreen" class="screen" hidden>
+  <div class="page-heading"><button class="back-button" data-back="menuScreen">→ رجوع</button><div><span class="eyebrow">GAME SETTINGS</span><h1>الإعدادات</h1></div></div>
+  <section class="settings-panel">
+    <label class="setting-row"><span><b>الأصوات</b><small>الركل، الصافرة، الأهداف والجمهور</small></span><input id="soundToggle" type="checkbox" checked></label>
+    <label class="setting-row"><span><b>موسيقى خلفية خفيفة</b><small>نغمات بسيطة مولّدة داخل اللعبة</small></span><input id="musicToggle" type="checkbox"></label>
+    <label class="setting-row"><span><b>اهتزاز الهاتف</b><small>اهتزاز عند تسجيل الهدف</small></span><input id="vibrateToggle" type="checkbox" checked></label>
+    <label class="setting-row"><span><b>تبديل جهة أزرار الحركة والركل</b><small>لضبطها حسب راحة يدك</small></span><input id="swapToggle" type="checkbox"></label>
+    <div class="setting-row scale-setting"><span><b>حجم أزرار التحكم</b><small>حرّك المؤشر لتكبيرها أو تصغيرها</small></span><input id="controlScale" type="range" min="80" max="130" value="100"></div>
+    <label class="setting-row"><span><b>لغة الواجهة</b><small>الواجهة الأساسية عربية، مع تسميات إنجليزية</small></span><select id="languageSelect"><option value="ar">العربية</option><option value="en">English labels</option></select></label>
+    <button id="clearDataBtn" class="danger-button">مسح الإحصائيات والعملات المحفوظة</button>
+  </section>
+</main>
+
+<main id="matchScreen" class="screen match-screen" hidden>
+  <div class="match-top"><button id="exitMatchBtn" class="round-icon" aria-label="الخروج">✕</button><div class="match-title"><span class="eyebrow">LIVE MATCH</span><b id="matchModeLabel">ARCADE 1V1</b></div><button id="pauseBtn" class="round-icon" aria-label="إيقاف">Ⅱ</button></div>
+  <div class="scoreboard">
+    <div class="score-team team-left"><img id="avatarLeft" src="./assets/roksi.webp" alt=""><div><small id="nameLeft">ROKSI</small><b id="scoreLeft">0</b><small class="cups" id="cupsLeft">🏆 0</small></div></div>
+    <div class="clock-box"><b id="gameClock">90</b><small id="clockCaption">SECONDS</small></div>
+    <div class="score-team team-right"><div><small id="nameRight">HEMA / IBI</small><b id="scoreRight">0</b><small class="cups" id="cupsRight">🏆 0</small></div><img id="avatarRight" src="./assets/hema.webp" alt=""></div>
+  </div>
+  <div id="fieldWrap" class="field-wrap">
+    <canvas id="pitch" width="1280" height="720" aria-label="ملعب كرة قدم"></canvas>
+    <div id="countdownOverlay" class="countdown-overlay" hidden>3</div>
+    <div id="eventOverlay" class="event-overlay" hidden></div>
+    <div id="pauseOverlay" class="overlay-card" hidden><b>إيقاف مؤقت</b><button id="resumeBtn" class="btn-primary">متابعة المباراة</button><button id="quitPausedBtn" class="btn-secondary">الخروج للقائمة</button></div>
+    <div id="goldenOverlay" class="golden-overlay" hidden><b>⚡ الهدف الذهبي</b><small>أول هدف يحسم المباراة!</small></div>
+  </div>
+  <div id="gameControls" class="game-controls"></div>
+  <div class="control-hint"><span id="controlHelp">◀ ▶ حركة • ⬆ قفز • 👟 ركل</span><span id="chargeHelp">القوى تُشحن خلال اللعب</span></div>
+</main>
+
+<main id="resultScreen" class="screen result-screen" hidden>
+  <div class="result-card">
+    <span class="eyebrow">FULL TIME</span><div id="resultMedal" class="result-medal">🏆</div><h1 id="resultTitle">انتصار!</h1><p id="resultDescription">أحسنت اللعب.</p>
+    <div class="result-score"><div><small id="resultNameA">ROKSI</small><b id="resultScoreA">0</b></div><i>:</i><div><small id="resultNameB">HEMA / IBI</small><b id="resultScoreB">0</b></div></div>
+    <div class="reward-line"><span>مكافأة المباراة</span><b id="matchReward">🪙 +20</b></div>
+    <div class="result-buttons"><button id="rematchBtn" class="btn-primary"><span>إعادة المباراة</span><b>↻</b></button><button id="resultSetupBtn" class="btn-secondary">تغيير الشخصية والقوى</button><button id="resultMenuBtn" class="btn-secondary">القائمة الرئيسية</button></div>
+  </div>
+</main>
 </div>
 <script type="module" src="./main.js"></script>
 </body>
