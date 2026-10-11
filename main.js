@@ -8,7 +8,7 @@ const CONFIG = Object.freeze({
   physics: {
     gravity: 0.62, ballGravity: 0.34, maxRunSpeed: 5.4, runAcceleration: 0.88, airAcceleration: 0.56,
     groundFriction: 0.78, airFriction: 0.985, jumpVelocity: -13.1, giantJumpVelocity: -17.3,
-    playerCollisionRadius: 46, headOffset: 151, headRadius: 30, headBounce: 6.5, headPush: 2.5,
+    playerCollisionRadius: 46, headOffset: 166, headRadius: 30, headBounce: 6.5, headPush: 2.5,
     footOffsetX: 32, footOffsetY: 22, ballRadius: 17, ballMaxSpeed: 23, ballFriction: 0.993,
     ballGroundBounce: 0.72, ballWallBounce: 0.76, stompVelocity: 11.5, stompSideForce: 7.5,
     kickDuration: 0.25, kickCooldown: 0.42, kickReachX: 105, kickReachY: 78, kickForce: 13.5,
@@ -83,13 +83,14 @@ function goScreen(id){
 }
 function charById(id){return CHARACTERS.find(c=>c.id===id)||CHARACTERS[0];}
 function setupMode(next){mode=next;$("#vsAiBtn").classList.toggle("chosen",mode==="ai");$("#localBtn").classList.toggle("chosen",mode==="local");$("#aiSetup").hidden=mode!=="ai";}
-$("#vsAiBtn").addEventListener("click",()=>setupMode("ai"));
-$("#localBtn").addEventListener("click",()=>setupMode("local"));
-$("#startSetupBtn").addEventListener("click",()=>{setupMode("ai");renderSetup();goScreen("setupScreen");});
-$("#vsAiBtn").addEventListener("dblclick",()=>{setupMode("ai");renderSetup();goScreen("setupScreen");});
-$("#localBtn").addEventListener("dblclick",()=>{setupMode("local");renderSetup();goScreen("setupScreen");});
+function openSetup(nextMode){
+  setupMode(nextMode);activeAssign=1;renderSetup();goScreen("setupScreen");
+}
+$("#vsAiBtn").addEventListener("click",()=>openSetup("ai"));
+$("#localBtn").addEventListener("click",()=>openSetup("local"));
+$("#startSetupBtn").addEventListener("click",()=>openSetup(mode));
 $$("[data-back]").forEach(b=>b.addEventListener("click",()=>goScreen(b.dataset.back)));
-$("#settingsOpen").addEventListener("click",()=>goScreen("settingsScreen"));
+$("#settingsOpen").addEventListener("click",()=>{if(!started)goScreen("settingsScreen");else showToast("أنهِ المباراة أو أوقفها قبل تغيير الإعدادات.");});
 $("#assignP1").addEventListener("click",()=>{activeAssign=1;renderSetup();});
 $("#assignP2").addEventListener("click",()=>{activeAssign=2;renderSetup();});
 
@@ -125,7 +126,7 @@ function renderSetup(){
   updateProfileUI();
 }
 $$(".difficulty").forEach(b=>b.addEventListener("click",()=>{difficulty=b.dataset.difficulty;renderSetup();}));
-$("#startSetupBtn").addEventListener("click",()=>{setupMode("ai");renderSetup();goScreen("setupScreen");});
+
 $("#startMatchBtn").addEventListener("click",()=>{
   if(selectedPowers.length!==3){showToast("اختر 3 قوى بالضبط قبل المباراة.");return;}
   startMatch();
@@ -184,7 +185,7 @@ function renderControls(){
     const p=CONFIG.powers[id];
     return '<button class="power-button" data-player="'+player+'" data-action="power" data-power="'+id+'" aria-label="'+p.name+'" style="--charge:0%"><span>'+p.icon+'</span></button>';
   }).join("");
-  const pad=(player,label)=>'<div class="control-player '+(player===2?'p2':'p1')+'" data-pad="'+player+'"><div class="player-tag">'+label+'</div><div class="power-row">'+powersHtml(player)+'</div><div class="control-row"><button class="left-button" data-player="'+player+'" data-action="left" aria-label="يسار">◀</button><button class="right-button" data-player="'+player+'" data-action="right" aria-label="يمين">▶</button><button class="jump-button" data-player="'+player+'" data-action="jump" aria-label="قفز">⬆</button><button class="kick-button" data-player="'+player+'" data-action="kick" aria-label="ركل">👟</button></div></div>';
+  const pad=(player,label)=>'<div class="control-player '+(player===2?'p2':'p1')+'" data-pad="'+player+'"><div class="player-tag">'+label+'</div><div class="power-row">'+powersHtml(player)+'</div><div class="control-row"><div class="move-cluster"><button class="left-button" data-player="'+player+'" data-action="left" aria-label="يسار">◀</button><button class="right-button" data-player="'+player+'" data-action="right" aria-label="يمين">▶</button></div><div class="action-cluster"><button class="jump-button" data-player="'+player+'" data-action="jump" aria-label="قفز">⬆</button><button class="kick-button" data-player="'+player+'" data-action="kick" aria-label="ركل">👟</button></div></div></div>';
   $("#gameControls").innerHTML=mode==="local"?pad(1,"PLAYER 1 • ROKSI")+pad(2,"PLAYER 2 • HEMA"):pad(1,"PLAYER 1 • YOU");
   if(mode==="ai")$("#gameControls").insertAdjacentHTML("beforeend",'<div class="cpu-chip">🤖 CPU</div>');
   if(saved.swap)$("#gameControls").classList.add("swapped");else $("#gameControls").classList.remove("swapped");
@@ -384,13 +385,14 @@ function updateBall(dt){
   if(Math.abs(b.vx)>CONFIG.physics.ballMaxSpeed)b.vx=Math.sign(b.vx)*CONFIG.physics.ballMaxSpeed;
   if(b.y<b.r+8){b.y=b.r+8;b.vy=Math.abs(b.vy)*CONFIG.physics.ballWallBounce;}
   if(b.y>CONFIG.world.groundY-b.r){b.y=CONFIG.world.groundY-b.r;b.vy=-Math.abs(b.vy)*CONFIG.physics.ballGroundBounce;if(Math.abs(b.vy)<1.2)b.vy=0;b.vx*=.96;}
-  const goalTop=CONFIG.world.goalTop-(game.bigGoal[1]>0||game.bigGoal[2]>0?65:0);
+  const leftGoalTop=CONFIG.world.goalTop-(game.bigGoal[1]>0?65:0);
+  const rightGoalTop=CONFIG.world.goalTop-(game.bigGoal[2]>0?65:0);
   const goalBottom=CONFIG.world.goalBottom;
-  if(b.x<CONFIG.world.goalX&&b.y>goalTop&&b.y<goalBottom){
+  if(b.x<CONFIG.world.goalX&&b.y>leftGoalTop&&b.y<goalBottom){
     if(game.shield[1]>0){b.x=CONFIG.world.goalX+b.r;b.vx=Math.abs(b.vx)*1.15;burst(b.x,b.y,"#6bdcff",18);}
     else{scoreGoal(2);return;}
   }
-  if(b.x>CONFIG.world.width-CONFIG.world.goalX&&b.y>goalTop&&b.y<goalBottom){
+  if(b.x>CONFIG.world.width-CONFIG.world.goalX&&b.y>rightGoalTop&&b.y<goalBottom){
     if(game.shield[2]>0){b.x=CONFIG.world.width-CONFIG.world.goalX-b.r;b.vx=-Math.abs(b.vx)*1.15;burst(b.x,b.y,"#6bdcff",18);}
     else{scoreGoal(1);return;}
   }
@@ -417,8 +419,9 @@ function collideHead(p){
 }
 function collideFeet(p){
   const b=game.ball,x=p.x+p.dir*CONFIG.physics.footOffsetX,y=p.y-CONFIG.physics.footOffsetY;
-  if(Math.hypot(b.x-x,b.y-y)<b.r+17&&p.kickTimer>0){
-    b.vx=p.dir*CONFIG.physics.kickForce*characterCard(p.charId).kick;b.vy=CONFIG.physics.kickLift*.72;
+  // ركلة واحدة لكل ضغطة؛ لا نكرر دفع الكرة في كل إطار من حركة القدم.
+  if(Math.hypot(b.x-x,b.y-y)<b.r+17&&p.kickTimer>0&&!p.kickApplied){
+    b.vx=p.dir*CONFIG.physics.kickForce*characterCard(p.charId).kick;b.vy=CONFIG.physics.kickLift*.72;p.kickApplied=true;
   }
 }
 function collidePlayers(a,b){
