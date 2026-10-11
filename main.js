@@ -98,7 +98,7 @@ function startGame(remoteStarted){
   $("#scoreA").textContent="0";$("#scoreB").textContent="0";$("#clock").textContent="90";
   $("#controlHint").textContent=mode==="online"?(isHost?"أنت الفريق الأيسر • العب للفوز":"أنت الفريق الأيمن • العب للفوز"):mode==="local"?"كل لاعب يملك أزراره":"تحرّك، اقفز، سدّد واستخدم قوتك!";
   $("#dualControls").hidden=!(mode==="local");$("#singleControls").hidden=mode==="local";
-  $(".player-pad").forEach(p=>p.hidden=false);
+  $$(".player-pad").forEach(p=>p.hidden=false);
   if(mode==="online"){$("#singleControls").hidden=true;$("#dualControls").hidden=false;const pads=$(".player-pad");if(pads.length===2){pads[0].hidden=!isHost;pads[1].hidden=isHost;}$("#controlHint").textContent=isHost?"أنت الفريق الأيسر • صديقك على اليمين":"أنت الفريق الأيمن • المضيف على اليسار";}
   fitCanvas();cancelAnimationFrame(raf);lastFrame=performance.now();stateSend=0;raf=requestAnimationFrame(gameLoop);
 }

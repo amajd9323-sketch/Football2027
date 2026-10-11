@@ -40,6 +40,8 @@ jobs:
         run: npx cap add android
       - name: Sync web files to Android
         run: npx cap sync android
+      - name: Force landscape orientation
+        run: node scripts/patch-android.cjs
       - name: Build debug APK
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug

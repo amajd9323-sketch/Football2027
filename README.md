@@ -1,22 +1,17 @@
 # Football 2027 Arena
 
-A mobile-first 2D arcade football game inspired by the broad genre of fast 1v1 head-to-head football games. It uses original Canvas-drawn characters and UI, not Head Ball 2 assets or branding.
+A mobile-first side-view 2D arcade football game with original Canvas-drawn characters and stadium art. Inspired by the general 1v1 arcade football genre; no Head Ball 2 art, sounds, or branding are reused.
 
 ## Modes
-- Solo vs computer (offline after the app is installed)
-- Local two-player mode on one device
-- Online private room using PeerJS WebRTC data channels (requires both devices to have internet and a browser/WebView with WebRTC support)
+- Solo vs AI, playable offline after installation
+- Local two-player match on one device
+- Private online room using PeerJS WebRTC (both devices need internet; some networks need a TURN relay)
 
-Online rooms use the free PeerJS Cloud signaling service by default. Peer-to-peer connection can fail on networks that require a TURN relay; if that happens, a custom signaling/TURN service is needed.
+## Controls
+Move left/right, jump, shoot and use one of three powers: rocket shot, freeze, or giant mode. Match lasts 90 seconds.
 
-## Build Android APK
-GitHub Actions automatically builds on each push to `main`, or manually:
-1. Open the **Actions** tab.
-2. Choose **Build Android APK**.
-3. Choose **Run workflow**.
-4. After it finishes successfully, download **Football2027-debug-apk** from **Artifacts**.
+## Android build
+GitHub Actions builds on every push to `main`. The workflow installs Node and Java, installs Android SDK platform/build tools, builds the web bundle, creates Capacitor Android, applies landscape orientation to MainActivity, builds the debug APK and uploads `Football2027-debug-apk`.
 
-The workflow installs TypeScript (required by `capacitor.config.ts`), builds the Vite bundle, creates the Android platform, syncs it and compiles a debug APK.
-
-## Gameplay
-90-second matches, jump, kick, a super move on cooldown, three character styles, and a team-color selector. Clubs are represented only by text names/colors; official badges and player likenesses are not included.
+## Current limits
+This is an arcade prototype. Online peer rooms use a public signaling service and are not guaranteed to connect on every network. Official club badges and player likenesses are not used.
