@@ -191,7 +191,7 @@ function createWorld(){
     ball:{x:CONFIG.world.width/2,y:-25,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-25},
     scoreA:0,scoreB:0,remaining:CONFIG.timing.matchSeconds,countdown:CONFIG.timing.countdownSeconds,
     celebration:0,slowTimer:0,goldenGoal:false,goldenRemaining:CONFIG.timing.goldenGoalAfter,over:false,bigGoal:{1:0,2:0},shield:{1:0,2:0},
-    elapsed:0,shake:0,rng:0x20271011,physicsEvents:0,scoringPlayer:0,ai:{wait:0,left:false,right:false,jump:false,kick:false,power:false},banner:"",bannerTime:0,fireParticles:[]};
+    elapsed:0,shake:0,rng:0x20271011,physicsEvents:0,scoringPlayer:0,lastPowerUser:0,lastPowerId:"",lastPowerSucceeded:false,powerEventSequence:0,ai:{wait:0,left:false,right:false,jump:false,kick:false,power:false},banner:"",bannerTime:0,fireParticles:[]};
 }
 function resizeCanvas(){
   if(!canvas||!canvas.clientWidth||!canvas.clientHeight)return;
@@ -321,21 +321,18 @@ function kickPlayer(id){
   p.kickTimer=CONFIG.physics.kickDuration;p.kickCooldown=CONFIG.physics.kickCooldown;p.kickApplied=false;
   playSound("kick");
 }
-function usePower(id,powerId){
-  if(!game||paused||finished||game.countdown>0)return;
-  const p=id===1?game.p1:game.p2,slot=p.powers.find(s=>s.id===powerId);
-  if(!slot||slot.used||slot.charge<1){showToast(slot&&slot.used?"استخدمت هذه القوة.":"القوة لم تُشحن بعد.");return;}
-  slot.used=true;slot.charge=0;
-  const enemy=id===1?game.p2:game.p1;
+function announcePower(id,powerId,success){
+  if(!success){showToast("القوة غير جاهزة بعد؛ انتظر اكتمال الشحن.");return;}
+  const p=id===1?game.p1:game.p2;
   switch(powerId){
-    case "freeze": enemy.frozen=CONFIG.powers.freeze.duration;burst(p.x,p.y-100,"#a8ebff",20);showToast("تجميد الخصم! ❄️");playSound("power");break;
-    case "bigGoal": game.bigGoal[id===1?2:1]=CONFIG.powers.bigGoal.duration;burst(id===1?CONFIG.world.width-30:30,CONFIG.world.goalTop,"#d2ff68",20);showToast("مرمى الخصم أصبح أكبر! 🥅");playSound("power");break;
-    case "fireball": {game.ball.fire=CONFIG.powers.fireball.duration;game.ball.fireOwner=id;const sign=game.ball.vx===0?p.dir:Math.sign(game.ball.vx);game.ball.vx=sign*Math.max(300,Math.abs(game.ball.vx)*1.4);game.ball.vy*=1.4;game.ball.vx=Math.max(-CONFIG.physics.ballMaxSpeed,Math.min(CONFIG.physics.ballMaxSpeed,game.ball.vx));burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");playSound("power");break;}
-    case "giantJump": p.giant=CONFIG.powers.giantJump.duration;p.vy=-CONFIG.physics.giantJumpVelocity;p.grounded=false;p.coyoteTimer=0;p.jumpBuffer=0;burst(p.x,p.y,"#b7ff4b",18);showToast("قفزة عملاقة! 🚀");playSound("power");break;
-    case "speed": p.speedBoost=CONFIG.powers.speed.duration;burst(p.x,p.y-80,"#fff07a",16);showToast("سرعة مضاعفة! ⚡");playSound("power");break;
-    case "shield": game.shield[id]=CONFIG.powers.shield.duration;burst(id===1?45:CONFIG.world.width-45,CONFIG.world.groundY-90,"#66d9ff",18);showToast("درع المرمى مفعّل! 🛡️");playSound("power");break;
+    case "freeze":burst(p.x,p.y-100,"#a8ebff",20);showToast("تجميد الخصم! ❄️");break;
+    case "bigGoal":burst(id===1?CONFIG.world.width-CONFIG.world.goalX:CONFIG.world.goalX,CONFIG.world.goalTop,"#d2ff68",20);showToast("مرمى الخصم أصبح أكبر! 🥅");break;
+    case "fireball":burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");break;
+    case "giantJump":burst(p.x,p.y,"#b7ff4b",18);showToast("قفزة عملاقة! 🚀");break;
+    case "speed":burst(p.x,p.y-80,"#fff07a",16);showToast("سرعة مضاعفة! ⚡");break;
+    case "shield":burst(id===1?CONFIG.world.goalX:CONFIG.world.width-CONFIG.world.goalX,CONFIG.world.groundY-90,"#66d9ff",18);showToast("درع المرمى مفعّل! 🛡️");break;
   }
-  updatePowerButtons();
+  playSound("power");updatePowerButtons();
 }
 function updatePowerButtons(){
   if(!game)return;
@@ -351,12 +348,9 @@ function updatePowerButtons(){
 function processInputActions(){
   for(let id=1;id<=2;id++){
     const p=id===1?game.p1:game.p2,inp=inputs[id];
-    /* الصوت والاهتزاز خارج المحاكاة؛ قرار القفز نفسه داخل step. */
+    /* الأصوات والاهتزاز خارج المحاكاة؛ كل تغيير في حالة المباراة داخل step. */
     if(inp.jump&&!p.jumpSoundPrev){playSound("jump");if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);}
     p.jumpSoundPrev=!!inp.jump;
-    const power=inp.power||"";
-    if(power&&power!==p.powerInputPrev)usePower(id,power);
-    p.powerInputPrev=power;
   }
 }
 function updateGame(dt){
@@ -412,6 +406,8 @@ function updateGame(dt){
     if(event&SIM_EVENT.GOAL){scoreGoal(game.scoringPlayer);break;}
   }
   if(simEvents&SIM_EVENT.JUMP){/* صوت القفز يبدأ من processInputActions لإبقاء الصوت خارج المحاكاة. */}
+  if(simEvents&SIM_EVENT.POWER)announcePower(game.lastPowerUser,game.lastPowerId,true);
+  else if(simEvents&SIM_EVENT.POWER_FAILED)announcePower(game.lastPowerUser,game.lastPowerId,false);
   if(simEvents&SIM_EVENT.KICK_START)playSound("kick");
   if(simEvents&SIM_EVENT.HEADER){playSound("header");burst(game.ball.x,game.ball.y,"#edfaff",4);}
   if(simEvents&SIM_EVENT.STOMP){playSound("stomp");burst(game.ball.x,game.ball.y,"#e6ff7a",14);game.shake=CONFIG.graphics.shake;}
@@ -434,7 +430,7 @@ function updatePowerTimers(p,dt){
 }
 /* محرك المحاكاة: هذا الجزء لا يقرأ DOM ولا يستخدم ساعة النظام أو أرقامًا عشوائية.
    السرعات بوحدة بكسل/ثانية، ويُستدعى أربع مرات لكل إطار ثابت. */
-const SIM_EVENT = Object.freeze({JUMP:1,KICK_START:2,KICK:4,HEADER:8,STOMP:16,GOAL:32,SHIELD:64,PLAYER_HIT:128});
+const SIM_EVENT = Object.freeze({JUMP:1,KICK_START:2,KICK:4,HEADER:8,STOMP:16,GOAL:32,SHIELD:64,PLAYER_HIT:128,POWER:256,POWER_FAILED:512});
 function approachZero(value,amount){if(value>0)return Math.max(0,value-amount);if(value<0)return Math.min(0,value+amount);return 0;}
 function touchCharge(player){
   for(let i=0;i<player.powers.length;i++){
@@ -442,6 +438,31 @@ function touchCharge(player){
     slot.charge=Math.min(1,slot.charge+CONFIG.physics.powerTouchCharge);
     if(slot.charge>=1)slot.used=false;
   }
+}
+function applyPowerStep(state,id,powerId){
+  const p=id===1?state.p1:state.p2,enemy=id===1?state.p2:state.p1;
+  let slot=null;
+  for(let i=0;i<p.powers.length;i++){if(p.powers[i].id===powerId){slot=p.powers[i];break;}}
+  if(!slot||slot.used||slot.charge<1)return false;
+  slot.used=true;slot.charge=0;
+  switch(powerId){
+    case "freeze":enemy.frozen=CONFIG.powers.freeze.duration;break;
+    case "bigGoal":state.bigGoal[enemy.id]=CONFIG.powers.bigGoal.duration;break;
+    case "fireball":{
+      const b=state.ball,sign=b.vx===0?p.dir:Math.sign(b.vx);
+      b.fire=CONFIG.powers.fireball.duration;b.fireOwner=id;
+      b.vx=sign*Math.max(300,Math.abs(b.vx)*1.4);b.vy*=1.4;
+      b.vx=Math.max(-CONFIG.physics.ballMaxSpeed,Math.min(CONFIG.physics.ballMaxSpeed,b.vx));
+      b.vy=Math.max(-CONFIG.physics.ballMaxSpeed,Math.min(CONFIG.physics.ballMaxSpeed,b.vy));
+      break;
+    }
+    case "giantJump":p.giant=CONFIG.powers.giantJump.duration;p.vy=-CONFIG.physics.giantJumpVelocity;p.grounded=false;p.coyoteTimer=0;p.jumpBuffer=0;break;
+    case "speed":p.speedBoost=CONFIG.powers.speed.duration;break;
+    case "shield":state.shield[id]=CONFIG.powers.shield.duration;break;
+    default:slot.used=false;return false;
+  }
+  state.lastPowerUser=id;state.lastPowerId=powerId;state.lastPowerSucceeded=true;state.powerEventSequence++;
+  return true;
 }
 function goalTopFor(state,goalkeeper){
   const height=CONFIG.world.goalBottom-CONFIG.world.goalTop;
@@ -538,6 +559,12 @@ function step(state,inputFrame,dt){
   p2.jumpInputPrev=!!inputFrame[2].jump;
   if(inputFrame[2].kick&&!p2.kickInputPrev&&p2.kickCooldown<=0){p2.kickTimer=CONFIG.physics.kickDuration;p2.kickCooldown=CONFIG.physics.kickCooldown;p2.kickApplied=false;events|=SIM_EVENT.KICK_START;}
   p2.kickInputPrev=!!inputFrame[2].kick;
+  const power1=inputFrame[1].power||"";
+  if(power1&&power1!==p1.powerInputPrev){p1.powerInputPrev=power1;if(applyPowerStep(state,1,power1))events|=SIM_EVENT.POWER;else{state.lastPowerUser=1;state.lastPowerId=power1;state.lastPowerSucceeded=false;state.powerEventSequence++;events|=SIM_EVENT.POWER_FAILED;}}
+  else p1.powerInputPrev=power1;
+  const power2=inputFrame[2].power||"";
+  if(power2&&power2!==p2.powerInputPrev){p2.powerInputPrev=power2;if(applyPowerStep(state,2,power2))events|=SIM_EVENT.POWER;else{state.lastPowerUser=2;state.lastPowerId=power2;state.lastPowerSucceeded=false;state.powerEventSequence++;events|=SIM_EVENT.POWER_FAILED;}}
+  else p2.powerInputPrev=power2;
   movePlayerSim(p1,inputFrame[1],dt);
   movePlayerSim(p2,inputFrame[2],dt);
 
