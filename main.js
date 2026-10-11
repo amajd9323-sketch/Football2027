@@ -406,14 +406,6 @@ function updateGame(dt){
     if(game.goldenRemaining<=0&&game.scoreA===game.scoreB){finishGame();return;}
   }
   if(game.bannerTime>0)game.bannerTime-=dt;
-  updatePowerTimers(game.p1,dt);updatePowerTimers(game.p2,dt);
-  game.bigGoal[1]=Math.max(0,game.bigGoal[1]-dt);game.bigGoal[2]=Math.max(0,game.bigGoal[2]-dt);
-  game.shield[1]=Math.max(0,game.shield[1]-dt);game.shield[2]=Math.max(0,game.shield[2]-dt);
-  game.p1.stun=Math.max(0,game.p1.stun-dt);game.p2.stun=Math.max(0,game.p2.stun-dt);
-  game.p1.kickCooldown=Math.max(0,game.p1.kickCooldown-dt);game.p2.kickCooldown=Math.max(0,game.p2.kickCooldown-dt);
-  
-  game.p1.giant=Math.max(0,game.p1.giant-dt);game.p2.giant=Math.max(0,game.p2.giant-dt);
-  game.p1.speedBoost=Math.max(0,game.p1.speedBoost-dt);game.p2.speedBoost=Math.max(0,game.p2.speedBoost-dt);
   if(mode==="ai")updateAI(dt);
   processInputActions();
   game.p1.renderPrevX=game.p1.x;game.p1.renderPrevY=game.p1.y;
@@ -440,13 +432,26 @@ function updateGame(dt){
   if(game.goldenGoal){$("#gameClock").textContent=String(Math.ceil(game.goldenRemaining)).padStart(2,"0");$("#clockCaption").textContent="GOLDEN GOAL";}
   else{$("#gameClock").textContent=String(Math.ceil(game.remaining)).padStart(2,"0");$("#clockCaption").textContent="SECONDS";}
 }
-function updatePowerTimers(p,dt){
-  for(let i=0;i<p.powers.length;i++){
-    const slot=p.powers[i],chargeTime=CONFIG.powers[slot.id].charge;
-    slot.charge=Math.min(1,slot.charge+dt/chargeTime);
-    if(slot.charge>=1)slot.used=false;
+/* جميع المؤقتات التي تؤثر على الفيزياء تتقدم داخل step، لا في واجهة العرض. */
+function tickSimulationTimers(state,dt){
+  const p1=state.p1,p2=state.p2;
+  for(let n=0;n<2;n++){
+    const p=n===0?p1:p2;
+    for(let i=0;i<p.powers.length;i++){
+      const slot=p.powers[i],chargeTime=CONFIG.powers[slot.id].charge;
+      slot.charge=Math.min(1,slot.charge+dt/chargeTime);
+      if(slot.charge>=1)slot.used=false;
+    }
+    p.frozen=Math.max(0,p.frozen-dt);
+    p.stun=Math.max(0,p.stun-dt);
+    p.kickCooldown=Math.max(0,p.kickCooldown-dt);
+    p.giant=Math.max(0,p.giant-dt);
+    p.speedBoost=Math.max(0,p.speedBoost-dt);
   }
-  p.frozen=Math.max(0,p.frozen-dt);
+  state.bigGoal[1]=Math.max(0,state.bigGoal[1]-dt);
+  state.bigGoal[2]=Math.max(0,state.bigGoal[2]-dt);
+  state.shield[1]=Math.max(0,state.shield[1]-dt);
+  state.shield[2]=Math.max(0,state.shield[2]-dt);
 }
 /* محرك المحاكاة: هذا الجزء لا يقرأ DOM ولا يستخدم ساعة النظام أو أرقامًا عشوائية.
    السرعات بوحدة بكسل/ثانية، ويُستدعى أربع مرات لكل إطار ثابت. */
@@ -572,6 +577,7 @@ function updateAI(dt){
 function step(state,inputFrame,dt){
   let events=0;
   const p1=state.p1,p2=state.p2,b=state.ball;
+  tickSimulationTimers(state,dt);
   p1.ballTouchCooldown=Math.max(0,(p1.ballTouchCooldown||0)-dt);
   p2.ballTouchCooldown=Math.max(0,(p2.ballTouchCooldown||0)-dt);
   /* تلتقط المحاكاة حواف القفز والركل والقوى نفسها؛ مصدر الأوامر لا يهم. */
@@ -601,6 +607,8 @@ function step(state,inputFrame,dt){
   if(b.vx< -CONFIG.physics.ballMaxSpeed)b.vx=-CONFIG.physics.ballMaxSpeed;
   if(b.vy>CONFIG.physics.ballMaxSpeed)b.vy=CONFIG.physics.ballMaxSpeed;
   if(b.vy< -CONFIG.physics.ballMaxSpeed)b.vy=-CONFIG.physics.ballMaxSpeed;
+  let ballSpeed=Math.hypot(b.vx,b.vy);
+  if(ballSpeed>CONFIG.physics.ballMaxSpeed){const ratio=CONFIG.physics.ballMaxSpeed/ballSpeed;b.vx*=ratio;b.vy*=ratio;}
 
   if(b.y<b.r+8){b.y=b.r+8;if(b.vy<0)b.vy=Math.abs(b.vy)*CONFIG.physics.ballWallBounce;}
   if(b.y>CONFIG.world.groundY-b.r){
@@ -680,6 +688,12 @@ function step(state,inputFrame,dt){
       if(attacker){victim.vx+=(victim.x>=attacker.x?1:-1)*260;victim.vy=Math.min(victim.vy,-200);victim.stun=.2;events|=SIM_EVENT.PLAYER_HIT;}
     }
   }
+  const playerMinX=CONFIG.world.goalX+CONFIG.physics.playerCollisionRadius;
+  const playerMaxX=CONFIG.world.width-CONFIG.world.goalX-CONFIG.physics.playerCollisionRadius;
+  p1.x=Math.max(playerMinX,Math.min(playerMaxX,p1.x));
+  p2.x=Math.max(playerMinX,Math.min(playerMaxX,p2.x));
+  ballSpeed=Math.hypot(b.vx,b.vy);
+  if(ballSpeed>CONFIG.physics.ballMaxSpeed){const ratio=CONFIG.physics.ballMaxSpeed/ballSpeed;b.vx*=ratio;b.vy*=ratio;}
   state.physicsEvents=events;
   return events;
 }
