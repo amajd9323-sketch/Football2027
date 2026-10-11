@@ -161,7 +161,7 @@ $("#controlOpacity").addEventListener("input",e=>{saved.controlOpacity=Number(e.
 $("#languageSelect").addEventListener("change",e=>{saved.language=e.target.value;document.documentElement.lang=saved.language;document.documentElement.dir=saved.language==="ar"?"rtl":"ltr";applyLanguage();saveData();});
 $("#clearDataBtn").addEventListener("click",()=>{
   if(!confirm(saved.language==="ar"?"هل تريد مسح العملات والإحصائيات نهائيًا؟":"Clear all coins and stats?"))return;
-  saved={...DEFAULT_DATA};saveData();$("#soundToggle").checked=true;$("#musicToggle").checked=false;$("#vibrateToggle").checked=true;$("#swapToggle").checked=false;$("#controlScale").value=100;setMusic(false);showToast("تم مسح البيانات.");goScreen("menuScreen");
+  saved={...DEFAULT_DATA};saveData();$("#soundToggle").checked=true;$("#musicToggle").checked=false;$("#vibrateToggle").checked=true;$("#swapToggle").checked=false;$("#controlScale").value=100;$("#controlOpacity").value=85;applyControlOpacity();setMusic(false);showToast("تم مسح البيانات.");goScreen("menuScreen");
 });
 function applyScale(){document.documentElement.style.setProperty("--control-scale",String(saved.controlScale/100));}
 function applyControlOpacity(){document.documentElement.style.setProperty("--control-opacity",String(saved.controlOpacity/100));}
