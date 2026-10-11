@@ -90,6 +90,7 @@
     <label class="setting-row"><span><b>اهتزاز الهاتف</b><small>اهتزاز عند تسجيل الهدف</small></span><input id="vibrateToggle" type="checkbox" checked></label>
     <label class="setting-row"><span><b>تبديل جهة أزرار الحركة والركل</b><small>لضبطها حسب راحة يدك</small></span><input id="swapToggle" type="checkbox"></label>
     <div class="setting-row scale-setting"><span><b>حجم أزرار التحكم</b><small>حرّك المؤشر لتكبيرها أو تصغيرها</small></span><input id="controlScale" type="range" min="80" max="130" value="100"></div>
+    <div class="setting-row scale-setting"><span><b>شفافية أزرار التحكم</b><small>اضبط وضوح الأزرار فوق الملعب</small></span><input id="controlOpacity" type="range" min="35" max="100" value="85"></div>
     <label class="setting-row"><span><b>لغة الواجهة</b><small>الواجهة الأساسية عربية، مع تسميات إنجليزية</small></span><select id="languageSelect"><option value="ar">العربية</option><option value="en">English labels</option></select></label>
     <button id="clearDataBtn" class="danger-button">مسح الإحصائيات والعملات المحفوظة</button>
   </section>
@@ -108,6 +109,13 @@
     <div id="eventOverlay" class="event-overlay" hidden></div>
     <div id="pauseOverlay" class="overlay-card" hidden><b>إيقاف مؤقت</b><button id="resumeBtn" class="btn-primary">متابعة المباراة</button><button id="quitPausedBtn" class="btn-secondary">الخروج للقائمة</button></div>
     <div id="goldenOverlay" class="golden-overlay" hidden><b>⚡ الهدف الذهبي</b><small>أول هدف يحسم المباراة!</small></div>
+    <section id="debugPanel" class="debug-panel" hidden aria-label="Debug physics panel">
+      <div class="debug-header"><b>DEBUG / F2</b><span>FPS <strong id="debugFps">60</strong></span></div>
+      <label>Gravity <output id="debugGravityValue">2600</output><input id="debugGravity" type="range" min="1000" max="4000" step="100" value="2600"></label>
+      <label>Ball gravity <output id="debugBallGravityValue">1400</output><input id="debugBallGravity" type="range" min="600" max="2400" step="50" value="1400"></label>
+      <label>Run speed <output id="debugSpeedValue">380</output><input id="debugSpeed" type="range" min="200" max="600" step="10" value="380"></label>
+      <label>Kick force <output id="debugKickValue">1000</output><input id="debugKickForce" type="range" min="500" max="1500" step="25" value="1000"></label>
+    </section>
   </div>
   <div id="gameControls" class="game-controls"></div>
   <div class="control-hint"><span id="controlHelp">◀ ▶ حركة • ⬆ قفز • 👟 ركل</span><span id="chargeHelp">القوى تُشحن خلال اللعب</span></div>
