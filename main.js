@@ -211,8 +211,8 @@ function renderControls(){
   if(saved.swap)$("#gameControls").classList.add("swapped");else $("#gameControls").classList.remove("swapped");
   $("#gameControls").querySelectorAll("[data-action]").forEach(btn=>{
     const player=Number(btn.dataset.player),action=btn.dataset.action;
-    const down=e=>{e.preventDefault();btn.classList.add("held");if(action==="left"||action==="right"){inputs[player][action]=true;}else if(action==="power"){usePower(player,btn.dataset.power);}else if(action==="jump"){jumpPlayer(player);}else if(action==="kick"){kickPlayer(player);}try{btn.setPointerCapture(e.pointerId);}catch{}};
-    const up=e=>{e.preventDefault();btn.classList.remove("held");if(action==="left"||action==="right")inputs[player][action]=false;};
+    const down=e=>{e.preventDefault();btn.classList.add("held");getAudio();if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);if(action==="left"||action==="right"){inputs[player][action]=true;}else if(action==="power"){inputs[player].power=btn.dataset.power;}else if(action==="jump"){inputs[player].jump=true;}else if(action==="kick"){inputs[player].kick=true;}try{btn.setPointerCapture(e.pointerId);}catch{}};
+    const up=e=>{e.preventDefault();btn.classList.remove("held");if(action==="left"||action==="right"||action==="jump"||action==="kick")inputs[player][action]=false;else if(action==="power")inputs[player].power="";};
     btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("lostpointercapture",up);
   });
 }
@@ -220,23 +220,24 @@ function renderControls(){
 function onGameKeyDown(e){
   if(!started||$("#matchScreen").hidden)return;
   const k=e.key.toLowerCase();
-  const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9"];
+  const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9","escape"];
   if(gameKeys.includes(k))e.preventDefault();
+  getAudio();
   if(k==="a")inputs[1].left=true;
   else if(k==="d")inputs[1].right=true;
   else if(k==="arrowleft")inputs[2].left=true;
   else if(k==="arrowright")inputs[2].right=true;
   if(e.repeat)return;
-  if(k==="w")jumpPlayer(1);
-  else if(k===" ")kickPlayer(1);
-  else if(k==="arrowup")jumpPlayer(2);
-  else if(k==="enter")kickPlayer(2);
-  else if(k==="1"&&selectedPowers[0])usePower(1,selectedPowers[0]);
-  else if(k==="2"&&selectedPowers[1])usePower(1,selectedPowers[1]);
-  else if(k==="3"&&selectedPowers[2])usePower(1,selectedPowers[2]);
-  else if(k==="7"&&selectedPowers[0])usePower(2,selectedPowers[0]);
-  else if(k==="8"&&selectedPowers[1])usePower(2,selectedPowers[1]);
-  else if(k==="9"&&selectedPowers[2])usePower(2,selectedPowers[2]);
+  if(k==="w")inputs[1].jump=true;
+  else if(k===" ")inputs[1].kick=true;
+  else if(k==="arrowup")inputs[2].jump=true;
+  else if(k==="enter")inputs[2].kick=true;
+  else if(k==="1"&&selectedPowers[0])inputs[1].power=selectedPowers[0];
+  else if(k==="2"&&selectedPowers[1])inputs[1].power=selectedPowers[1];
+  else if(k==="3"&&selectedPowers[2])inputs[1].power=selectedPowers[2];
+  else if(k==="7"&&selectedPowers[0])inputs[2].power=selectedPowers[0];
+  else if(k==="8"&&selectedPowers[1])inputs[2].power=selectedPowers[1];
+  else if(k==="9"&&selectedPowers[2])inputs[2].power=selectedPowers[2];
   else if(k==="escape")togglePause();
 }
 function onGameKeyUp(e){
@@ -245,10 +246,16 @@ function onGameKeyUp(e){
   else if(k==="d")inputs[1].right=false;
   else if(k==="arrowleft")inputs[2].left=false;
   else if(k==="arrowright")inputs[2].right=false;
+  else if(k==="w")inputs[1].jump=false;
+  else if(k===" ")inputs[1].kick=false;
+  else if(k==="arrowup")inputs[2].jump=false;
+  else if(k==="enter")inputs[2].kick=false;
+  else if(["1","2","3"].includes(k))inputs[1].power="";
+  else if(["7","8","9"].includes(k))inputs[2].power="";
 }
 window.addEventListener("keydown",onGameKeyDown,{passive:false});
 window.addEventListener("keyup",onGameKeyUp);
-window.addEventListener("blur",()=>{inputs={1:{left:false,right:false},2:{left:false,right:false}};});
+window.addEventListener("blur",()=>{inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};if(game){game.p1.jumpInputPrev=game.p2.jumpInputPrev=false;game.p1.kickInputPrev=game.p2.kickInputPrev=false;game.p1.powerInputPrev=game.p2.powerInputPrev="";}});
 
 $("#pauseBtn").addEventListener("click",togglePause);
 $("#resumeBtn").addEventListener("click",togglePause);
@@ -264,7 +271,7 @@ function togglePause(){
 }
 function startMatch(){
   started=true;paused=false;finished=false;mode=mode==="local"?"local":"ai";
-  game=createWorld();inputs={1:{left:false,right:false},2:{left:false,right:false}};particles.length=0;
+  game=createWorld();inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};particles.length=0;
   $("#scoreLeft").textContent="0";$("#scoreRight").textContent="0";$("#pauseOverlay").hidden=true;$("#eventOverlay").hidden=true;$("#goldenOverlay").hidden=true;
   $("#nameLeft").textContent=characterCard(chosen[1]).name;$("#nameRight").textContent=mode==="ai"?"CPU • "+characterCard(chosen[2]).name:characterCard(chosen[2]).name;
   $("#avatarLeft").src=characterCard(chosen[1]).img||"./assets/game-logo.webp";$("#avatarRight").src=characterCard(chosen[2]).img||"./assets/game-logo.webp";
@@ -325,6 +332,22 @@ function updatePowerButtons(){
     btn.title=slot.used?"مستعملة":slot.charge>=1?"جاهزة":"شحن "+pct+"%";
   });
 }
+function processInputActions(){
+  for(let id=1;id<=2;id++){
+    const p=id===1?game.p1:game.p2,inp=inputs[id];
+    if(inp.jump&&!p.jumpInputPrev){
+      p.jumpBuffer=CONFIG.physics.jumpBuffer;
+      playSound("jump");
+      if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
+    }
+    p.jumpInputPrev=!!inp.jump;
+    if(inp.kick&&!p.kickInputPrev)kickPlayer(id);
+    p.kickInputPrev=!!inp.kick;
+    const power=inp.power||"";
+    if(power&&power!==p.powerInputPrev)usePower(id,power);
+    p.powerInputPrev=power;
+  }
+}
 function updateGame(dt){
   if(!game||game.over||finished)return;
   if(game.countdown>0){
@@ -367,6 +390,7 @@ function updateGame(dt){
   game.p1.giant=Math.max(0,game.p1.giant-dt);game.p2.giant=Math.max(0,game.p2.giant-dt);
   game.p1.speedBoost=Math.max(0,game.p1.speedBoost-dt);game.p2.speedBoost=Math.max(0,game.p2.speedBoost-dt);
   if(mode==="ai")updateAI(dt);
+  processInputActions();
   let simEvents=0;
   const subDt=dt/CONFIG.timing.physicsSubsteps;
   for(let sub=0;sub<CONFIG.timing.physicsSubsteps;sub++){
@@ -407,19 +431,34 @@ function goalTopFor(state,goalkeeper){
   const height=CONFIG.world.goalBottom-CONFIG.world.goalTop;
   return state.bigGoal[goalkeeper]>0?CONFIG.world.goalBottom-height*CONFIG.world.goalExpand:CONFIG.world.goalTop;
 }
-function footPosition(p){
-  const progress=Math.max(0,Math.min(1,1-p.kickTimer/CONFIG.physics.kickDuration));
-  const angle=(-30+110*progress)*Math.PI/180;
-  const reach=CONFIG.physics.footRadius*1.15;
-  return {
-    x:p.x+p.dir*(CONFIG.physics.footOffsetX+Math.cos(angle)*reach),
-    y:p.y-CONFIG.physics.footOffsetY-Math.sin(angle)*reach
-  };
+function stepKickPlayer(state,p,dt){
+  const b=state.ball;
+  let hit=0;
+  if(p.kickTimer>0&&!p.kickApplied){
+    const progress=Math.max(0,Math.min(1,1-p.kickTimer/CONFIG.physics.kickDuration));
+    const angle=(-30+110*progress)*Math.PI/180;
+    const reach=CONFIG.physics.footRadius*1.15;
+    const footX=p.x+p.dir*(CONFIG.physics.footOffsetX+Math.cos(angle)*reach);
+    const footY=p.y-CONFIG.physics.footOffsetY-Math.sin(angle)*reach;
+    const fx=b.x-footX,fy=b.y-footY,dist=Math.hypot(fx,fy);
+    if(dist<=b.r+CONFIG.physics.footRadius&&dist>0){
+      const c=charById(p.charId);
+      const boost=b.fire>0?1.4:1;
+      const force=(p.grounded?CONFIG.physics.kickForce:CONFIG.physics.airKickForce)*c.kick*boost;
+      let ax=fx/dist+p.dir*.18,ay=fy/dist-.25,alen=Math.hypot(ax,ay)||1;
+      b.vx=ax/alen*force+p.vx*.35;b.vy=ay/alen*force+p.vy*.35;
+      if(b.vx>CONFIG.physics.ballMaxSpeed)b.vx=CONFIG.physics.ballMaxSpeed;
+      if(b.vx< -CONFIG.physics.ballMaxSpeed)b.vx=-CONFIG.physics.ballMaxSpeed;
+      if(b.vy>CONFIG.physics.ballMaxSpeed)b.vy=CONFIG.physics.ballMaxSpeed;
+      if(b.vy< -CONFIG.physics.ballMaxSpeed)b.vy=-CONFIG.physics.ballMaxSpeed;
+      p.kickApplied=true;touchCharge(p);hit=SIM_EVENT.KICK;
+    }
+  }
+  p.kickTimer=Math.max(0,p.kickTimer-dt);
+  return hit;
 }
 function movePlayerSim(p,inp,dt){
   p.prevY=p.y;
-  if(inp.jump&&!p.jumpInputPrev)p.jumpBuffer=CONFIG.physics.jumpBuffer;
-  p.jumpInputPrev=!!inp.jump;
   if(p.grounded)p.coyoteTimer=CONFIG.physics.coyoteTime;
   else p.coyoteTimer=Math.max(0,p.coyoteTimer-dt);
   if(p.jumpBuffer>0&&p.coyoteTimer>0&&p.frozen<=0){
@@ -454,7 +493,8 @@ function updateAI(dt){
   game.ai.wait-=dt;
   if(game.ai.wait<=0){
     const predictedX=b.x+b.vx*.6;
-    const target=Math.max(CONFIG.world.goalX+CONFIG.physics.playerCollisionRadius,Math.min(CONFIG.world.width-CONFIG.world.goalX-CONFIG.physics.playerCollisionRadius,predictedX+(game.p2.id===2?-ai.positionError:ai.positionError)));
+    const positionError=(simRandom()*2-1)*ai.positionError;
+    const target=Math.max(CONFIG.world.goalX+CONFIG.physics.playerCollisionRadius,Math.min(CONFIG.world.width-CONFIG.world.goalX-CONFIG.physics.playerCollisionRadius,predictedX+positionError));
     game.ai.left=target<p.x-16;game.ai.right=target>p.x+16;
     game.ai.jump=(b.y<p.y-100&&Math.abs(b.x-p.x)<ai.jumpDistance&&p.grounded);
     game.ai.kick=(Math.abs(b.x-p.x)<ai.kickDistance&&Math.abs(b.y-(p.y-CONFIG.physics.headOffset))<130);
@@ -462,17 +502,13 @@ function updateAI(dt){
     game.ai.wait=ai.reaction;
   }
   inputs[2].left=game.ai.left;inputs[2].right=game.ai.right;
-  if(game.ai.jump&&p.grounded)jumpPlayer(2);
-  if(game.ai.kick&&p.kickCooldown<=0){
-    /* قرار تسديد حتمي؛ صعوبة البوت تضبط هامش الخطأ والجرأة. */
-    const aim=(CONFIG.world.goalTop+CONFIG.world.goalBottom)/2;
-    const targetX=b.x+(b.vx>0?25:-25);
-    const error=Math.abs(targetX-p.x);
-    if(Math.abs(b.y-aim)<300||error<ai.kickDistance*ai.accuracy)kickPlayer(2);
-  }
-  if(game.ai.power&&simRandom()<.006*ai.aggression){
-    const slot=p.powers.find(s=>!s.used&&s.charge>=1);if(slot)usePower(2,slot.id);
-  }
+  inputs[2].jump=!!(game.ai.jump&&p.grounded);
+  const aim=(CONFIG.world.goalTop+CONFIG.world.goalBottom)/2;
+  const targetX=b.x+(b.vx>0?25:-25);
+  const error=Math.abs(targetX-p.x);
+  inputs[2].kick=!!(game.ai.kick&&p.kickCooldown<=0&&(Math.abs(b.y-aim)<300||error<ai.kickDistance*ai.accuracy));
+  const readyPower=p.powers.find(s=>!s.used&&s.charge>=1);
+  inputs[2].power=game.ai.power&&readyPower&&simRandom()<.006*ai.aggression?readyPower.id:"";
 }
 function step(state,inputFrame,dt){
   let events=0;
@@ -553,23 +589,8 @@ function step(state,inputFrame,dt){
   }
 
   /* قوس القدم 110 درجة، وركلة واحدة فقط لكل ضغطة. */
-  const kickPlayerSim=(p)=>{
-    if(p.kickTimer>0&&!p.kickApplied){
-      const foot=footPosition(p),fx=b.x-foot.x,fy=b.y-foot.y,dist=Math.hypot(fx,fy);
-      if(dist<=b.r+CONFIG.physics.footRadius&&dist>0){
-        const boost=b.fire>0?1.4:1,force=(p.grounded?CONFIG.physics.kickForce:CONFIG.physics.airKickForce)*charById(p.charId).kick*boost;
-        let ax=fx/dist+p.dir*.18,ay=fy/dist-.25,alen=Math.hypot(ax,ay)||1;
-        b.vx=ax/alen*force+p.vx*.35;b.vy=ay/alen*force+p.vy*.35;
-        if(b.vx>CONFIG.physics.ballMaxSpeed)b.vx=CONFIG.physics.ballMaxSpeed;
-        if(b.vx< -CONFIG.physics.ballMaxSpeed)b.vx=-CONFIG.physics.ballMaxSpeed;
-        if(b.vy>CONFIG.physics.ballMaxSpeed)b.vy=CONFIG.physics.ballMaxSpeed;
-        if(b.vy< -CONFIG.physics.ballMaxSpeed)b.vy=-CONFIG.physics.ballMaxSpeed;
-        p.kickApplied=true;touchCharge(p);events|=SIM_EVENT.KICK;
-      }
-    }
-    p.kickTimer=Math.max(0,p.kickTimer-dt);
-  };
-  kickPlayerSim(p1);kickPlayerSim(p2);
+  events|=stepKickPlayer(state,p1,dt);
+  events|=stepKickPlayer(state,p2,dt);
 
   /* دفع رأسي للاعبين مع فصل المراكز، ثم أثر الكرة النارية عند الالتحام. */
   dx=p2.x-p1.x;d=Math.abs(dx);min=CONFIG.physics.playerCollisionRadius*2;
