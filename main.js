@@ -211,9 +211,29 @@ function renderControls(){
   if(saved.swap)$("#gameControls").classList.add("swapped");else $("#gameControls").classList.remove("swapped");
   $("#gameControls").querySelectorAll("[data-action]").forEach(btn=>{
     const player=Number(btn.dataset.player),action=btn.dataset.action;
-    const down=e=>{e.preventDefault();btn.classList.add("held");getAudio();if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);if(action==="left"||action==="right"){inputs[player][action]=true;}else if(action==="power"){inputs[player].power=btn.dataset.power;}else if(action==="jump"){inputs[player].jump=true;}else if(action==="kick"){inputs[player].kick=true;}try{btn.setPointerCapture(e.pointerId);}catch{}};
-    const up=e=>{e.preventDefault();btn.classList.remove("held");if(action==="left"||action==="right"||action==="jump"||action==="kick")inputs[player][action]=false;else if(action==="power")inputs[player].power="";};
-    btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("lostpointercapture",up);
+    /* كل زر يحتفظ بكل أصابع الضغط؛ رفع إصبع لا يلغي ضغط إصبع آخر. */
+    const activePointerIds=new Set();
+    const syncInput=()=>{
+      const held=activePointerIds.size>0;
+      btn.classList.toggle("held",held);
+      if(action==="left"||action==="right"||action==="jump"||action==="kick")inputs[player][action]=held;
+      else if(action==="power")inputs[player].power=held?btn.dataset.power:"";
+    };
+    const down=e=>{
+      e.preventDefault();
+      if(activePointerIds.has(e.pointerId))return;
+      activePointerIds.add(e.pointerId);syncInput();getAudio();
+      if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
+      try{btn.setPointerCapture(e.pointerId);}catch{}
+    };
+    const up=e=>{
+      if(!activePointerIds.has(e.pointerId))return;
+      e.preventDefault();activePointerIds.delete(e.pointerId);syncInput();
+    };
+    btn.addEventListener("pointerdown",down);
+    btn.addEventListener("pointerup",up);
+    btn.addEventListener("pointercancel",up);
+    btn.addEventListener("lostpointercapture",up);
   });
 }
 // تحكم لوحة المفاتيح للاختبار على الحاسوب أو جهاز Android مع لوحة مفاتيح.
