@@ -184,7 +184,7 @@ function characterCard(id){return charById(id);}
 function createPlayer(id,x,charId){
   const c=characterCard(charId);
   const powers=selectedPowers.map(powerId=>({id:powerId,charge:0,used:false}));
-  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
+  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,jumpSoundPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
 }
 function createWorld(){
   return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
@@ -259,7 +259,7 @@ window.addEventListener("keyup",onGameKeyUp);
 window.addEventListener("blur",clearMatchInputs);
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&started&&!paused)togglePause();});
 document.addEventListener("contextmenu",e=>{if(e.target.closest("#matchScreen"))e.preventDefault();});
-function clearMatchInputs(){inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};if(game){game.p1.jumpInputPrev=game.p2.jumpInputPrev=false;game.p1.kickInputPrev=game.p2.kickInputPrev=false;game.p1.powerInputPrev=game.p2.powerInputPrev="";}}
+function clearMatchInputs(){inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};if(game){game.p1.jumpInputPrev=game.p2.jumpInputPrev=false;game.p1.jumpSoundPrev=game.p2.jumpSoundPrev=false;game.p1.kickInputPrev=game.p2.kickInputPrev=false;game.p1.powerInputPrev=game.p2.powerInputPrev="";}}
 
 $("#pauseBtn").addEventListener("click",togglePause);
 $("#resumeBtn").addEventListener("click",togglePause);
@@ -351,14 +351,9 @@ function updatePowerButtons(){
 function processInputActions(){
   for(let id=1;id<=2;id++){
     const p=id===1?game.p1:game.p2,inp=inputs[id];
-    if(inp.jump&&!p.jumpInputPrev){
-      p.jumpBuffer=CONFIG.physics.jumpBuffer;
-      playSound("jump");
-      if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
-    }
-    p.jumpInputPrev=!!inp.jump;
-    if(inp.kick&&!p.kickInputPrev)kickPlayer(id);
-    p.kickInputPrev=!!inp.kick;
+    /* الصوت والاهتزاز خارج المحاكاة؛ قرار القفز نفسه داخل step. */
+    if(inp.jump&&!p.jumpSoundPrev){playSound("jump");if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);}
+    p.jumpSoundPrev=!!inp.jump;
     const power=inp.power||"";
     if(power&&power!==p.powerInputPrev)usePower(id,power);
     p.powerInputPrev=power;
@@ -416,6 +411,8 @@ function updateGame(dt){
     const event=step(game,inputs,subDt);simEvents|=event;
     if(event&SIM_EVENT.GOAL){scoreGoal(game.scoringPlayer);break;}
   }
+  if(simEvents&SIM_EVENT.JUMP){/* صوت القفز يبدأ من processInputActions لإبقاء الصوت خارج المحاكاة. */}
+  if(simEvents&SIM_EVENT.KICK_START)playSound("kick");
   if(simEvents&SIM_EVENT.HEADER){playSound("header");burst(game.ball.x,game.ball.y,"#edfaff",4);}
   if(simEvents&SIM_EVENT.STOMP){playSound("stomp");burst(game.ball.x,game.ball.y,"#e6ff7a",14);game.shake=CONFIG.graphics.shake;}
   if(simEvents&SIM_EVENT.KICK){burst(game.ball.x,game.ball.y,game.ball.fire>0?"#ff6b37":"#eff9ff",game.ball.fire>0?18:9);game.shake=CONFIG.graphics.shake*.3;}
@@ -437,7 +434,7 @@ function updatePowerTimers(p,dt){
 }
 /* محرك المحاكاة: هذا الجزء لا يقرأ DOM ولا يستخدم ساعة النظام أو أرقامًا عشوائية.
    السرعات بوحدة بكسل/ثانية، ويُستدعى أربع مرات لكل إطار ثابت. */
-const SIM_EVENT = Object.freeze({JUMP:1,KICK:2,HEADER:4,STOMP:8,GOAL:16,SHIELD:32,PLAYER_HIT:64});
+const SIM_EVENT = Object.freeze({JUMP:1,KICK_START:2,KICK:4,HEADER:8,STOMP:16,GOAL:32,SHIELD:64,PLAYER_HIT:128});
 function approachZero(value,amount){if(value>0)return Math.max(0,value-amount);if(value<0)return Math.min(0,value+amount);return 0;}
 function touchCharge(player){
   for(let i=0;i<player.powers.length;i++){
@@ -532,6 +529,15 @@ function updateAI(dt){
 function step(state,inputFrame,dt){
   let events=0;
   const p1=state.p1,p2=state.p2,b=state.ball;
+  /* تلتقط المحاكاة حواف القفز والركل نفسها؛ مصدر الأوامر لا يهم. */
+  if(inputFrame[1].jump&&!p1.jumpInputPrev){p1.jumpBuffer=CONFIG.physics.jumpBuffer;events|=SIM_EVENT.JUMP;}
+  p1.jumpInputPrev=!!inputFrame[1].jump;
+  if(inputFrame[1].kick&&!p1.kickInputPrev&&p1.kickCooldown<=0){p1.kickTimer=CONFIG.physics.kickDuration;p1.kickCooldown=CONFIG.physics.kickCooldown;p1.kickApplied=false;events|=SIM_EVENT.KICK_START;}
+  p1.kickInputPrev=!!inputFrame[1].kick;
+  if(inputFrame[2].jump&&!p2.jumpInputPrev){p2.jumpBuffer=CONFIG.physics.jumpBuffer;events|=SIM_EVENT.JUMP;}
+  p2.jumpInputPrev=!!inputFrame[2].jump;
+  if(inputFrame[2].kick&&!p2.kickInputPrev&&p2.kickCooldown<=0){p2.kickTimer=CONFIG.physics.kickDuration;p2.kickCooldown=CONFIG.physics.kickCooldown;p2.kickApplied=false;events|=SIM_EVENT.KICK_START;}
+  p2.kickInputPrev=!!inputFrame[2].kick;
   movePlayerSim(p1,inputFrame[1],dt);
   movePlayerSim(p2,inputFrame[2],dt);
 
