@@ -1,9 +1,7 @@
 /* Football 2027 Arena: cache application shell for offline play. */
-const CACHE_NAME = "football2027-arena-shell-v2";
+const CACHE_NAME = "football2027-arena-shell-v3";
 const APP_SHELL = [
   "./index.html",
-  "./style.css",
-  "./main.js",
   "./manifest.webmanifest",
   "./assets/game-logo.webp",
   "./assets/roksi.webp",
