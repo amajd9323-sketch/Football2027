@@ -150,7 +150,11 @@ $("#clearDataBtn").addEventListener("click",()=>{
 });
 function applyScale(){document.documentElement.style.setProperty("--control-scale",String(saved.controlScale/100));}
 function applyLanguage(){
-  if(saved.language==="ar")return;
+  const translatable=$("h1,h2,b,button,small,p,span");
+  if(saved.language==="ar"){
+    translatable.forEach(el=>{if(el.dataset.orig)el.textContent=el.dataset.orig;});
+    return;
+  }
   const map={"اختر نمط اللعب":"Choose a match","ضد الكمبيوتر":"VS Computer","لاعبان على نفس الهاتف":"Local 2 Players","اختيار الشخصية والقوى":"Choose character & powers","دخول الملعب":"Enter Arena","إعدادات":"Settings","الإعدادات":"Settings","اختر أبطالك":"Choose your players","الشخصيات الأصلية":"Original characters","اختر 3 قوى للمباراة":"Choose 3 powers","صعوبة الخصم":"CPU difficulty","مبتدئ":"Easy","محترف":"Normal","أسطوري":"Hard","إيقاف مؤقت":"Paused","متابعة المباراة":"Resume match","الخروج للقائمة":"Back to menu","القائمة الرئيسية":"Main menu","إعادة المباراة":"Rematch","انتصارات":"Wins","مباريات":"Matches","هدف ذهبي":"Golden goal"};
   $$("h1,h2,b,button,small,p,span").forEach(el=>{if(!el.dataset.orig)el.dataset.orig=el.textContent;const key=el.dataset.orig.trim();if(map[key])el.textContent=map[key];});
 }
@@ -168,7 +172,7 @@ function createPlayer(id,x,charId){
 }
 function createWorld(){
   return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
-    ball:{x:CONFIG.world.width/2,y:-25,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,spin:0,prevX:CONFIG.world.width/2,prevY:-25},
+    ball:{x:CONFIG.world.width/2,y:-25,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-25},
     scoreA:0,scoreB:0,remaining:CONFIG.timing.matchSeconds,countdown:CONFIG.timing.countdownSeconds,
     celebration:0,slowTimer:0,goldenGoal:false,over:false,bigGoal:{1:0,2:0},shield:{1:0,2:0},
     elapsed:0,shake:0,ai:{wait:0,left:false,right:false,jump:false,kick:false,power:false},banner:"",bannerTime:0,fireParticles:[]};
@@ -196,6 +200,40 @@ function renderControls(){
     btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("lostpointercapture",up);
   });
 }
+// تحكم لوحة المفاتيح للاختبار على الحاسوب أو جهاز Android مع لوحة مفاتيح.
+function onGameKeyDown(e){
+  if(!started||$("#matchScreen").hidden)return;
+  const k=e.key.toLowerCase();
+  const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9"];
+  if(gameKeys.includes(k))e.preventDefault();
+  if(k==="a")inputs[1].left=true;
+  else if(k==="d")inputs[1].right=true;
+  else if(k==="arrowleft")inputs[2].left=true;
+  else if(k==="arrowright")inputs[2].right=true;
+  if(e.repeat)return;
+  if(k==="w")jumpPlayer(1);
+  else if(k===" ")kickPlayer(1);
+  else if(k==="arrowup")jumpPlayer(2);
+  else if(k==="enter")kickPlayer(2);
+  else if(k==="1"&&selectedPowers[0])usePower(1,selectedPowers[0]);
+  else if(k==="2"&&selectedPowers[1])usePower(1,selectedPowers[1]);
+  else if(k==="3"&&selectedPowers[2])usePower(1,selectedPowers[2]);
+  else if(k==="7"&&selectedPowers[0])usePower(2,selectedPowers[0]);
+  else if(k==="8"&&selectedPowers[1])usePower(2,selectedPowers[1]);
+  else if(k==="9"&&selectedPowers[2])usePower(2,selectedPowers[2]);
+  else if(k==="escape")togglePause();
+}
+function onGameKeyUp(e){
+  const k=e.key.toLowerCase();
+  if(k==="a")inputs[1].left=false;
+  else if(k==="d")inputs[1].right=false;
+  else if(k==="arrowleft")inputs[2].left=false;
+  else if(k==="arrowright")inputs[2].right=false;
+}
+window.addEventListener("keydown",onGameKeyDown,{passive:false});
+window.addEventListener("keyup",onGameKeyUp);
+window.addEventListener("blur",()=>{inputs={1:{left:false,right:false},2:{left:false,right:false}};});
+
 $("#pauseBtn").addEventListener("click",togglePause);
 $("#resumeBtn").addEventListener("click",togglePause);
 $("#quitPausedBtn").addEventListener("click",()=>{stopLoop();goScreen("menuScreen");});
@@ -253,7 +291,7 @@ function usePower(id,powerId){
   switch(powerId){
     case "freeze": enemy.frozen=CONFIG.powers.freeze.duration;burst(p.x,p.y-100,"#a8ebff",20);showToast("تجميد الخصم! ❄️");playSound("power");break;
     case "bigGoal": game.bigGoal[id===1?2:1]=CONFIG.powers.bigGoal.duration;burst(id===1?CONFIG.world.width-30:30,CONFIG.world.goalTop,"#d2ff68",20);showToast("مرمى الخصم أصبح أكبر! 🥅");playSound("power");break;
-    case "fireball": game.ball.fire=CONFIG.powers.fireball.duration;game.ball.vx+=p.dir*9;game.ball.vy-=3;burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");playSound("power");break;
+    case "fireball": game.ball.fire=CONFIG.powers.fireball.duration;game.ball.fireOwner=id;game.ball.vx+=p.dir*9;game.ball.vy-=3;burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");playSound("power");break;
     case "giantJump": p.giant=CONFIG.powers.giantJump.duration;p.vy=CONFIG.physics.giantJumpVelocity;p.grounded=false;burst(p.x,p.y,"#b7ff4b",18);showToast("قفزة عملاقة! 🚀");playSound("power");break;
     case "speed": p.speedBoost=CONFIG.powers.speed.duration;burst(p.x,p.y-80,"#fff07a",16);showToast("سرعة مضاعفة! ⚡");playSound("power");break;
     case "shield": game.shield[id]=CONFIG.powers.shield.duration;burst(id===1?45:CONFIG.world.width-45,CONFIG.world.groundY-90,"#66d9ff",18);showToast("درع المرمى مفعّل! 🛡️");playSound("power");break;
@@ -296,7 +334,7 @@ function updateGame(dt){
     if(game.remaining<=0){
       game.remaining=0;
       if(game.scoreA===game.scoreB){
-        game.goldenGoal=true;game.banner="الهدف الذهبي!";game.bannerTime=2.5;game.countdown=CONFIG.timing.countdownSeconds;game.ball={x:CONFIG.world.width/2,y:-24,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,spin:0,prevX:CONFIG.world.width/2,prevY:-24};$("#goldenOverlay").hidden=false;
+        game.goldenGoal=true;game.banner="الهدف الذهبي!";game.bannerTime=2.5;game.countdown=CONFIG.timing.countdownSeconds;game.ball={x:CONFIG.world.width/2,y:-24,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-24};$("#goldenOverlay").hidden=false;
       }else{finishGame();return;}
     }
   }
@@ -381,7 +419,7 @@ function applyKick(p){
 function updateBall(dt){
   const b=game.ball;b.prevX=b.x;b.prevY=b.y;
   b.vy+=CONFIG.physics.ballGravity*60*dt;b.x+=b.vx*60*dt;b.y+=b.vy*60*dt;b.spin+=b.vx*dt*.06;
-  b.vx*=Math.pow(CONFIG.physics.ballFriction,60*dt);b.fire=Math.max(0,b.fire-dt);
+  b.vx*=Math.pow(CONFIG.physics.ballFriction,60*dt);b.fire=Math.max(0,b.fire-dt);if(b.fire<=0)b.fireOwner=0;
   if(Math.abs(b.vx)>CONFIG.physics.ballMaxSpeed)b.vx=Math.sign(b.vx)*CONFIG.physics.ballMaxSpeed;
   if(b.y<b.r+8){b.y=b.r+8;b.vy=Math.abs(b.vy)*CONFIG.physics.ballWallBounce;}
   if(b.y>CONFIG.world.groundY-b.r){b.y=CONFIG.world.groundY-b.r;b.vy=-Math.abs(b.vy)*CONFIG.physics.ballGroundBounce;if(Math.abs(b.vy)<1.2)b.vy=0;b.vx*=.96;}
@@ -409,7 +447,9 @@ function stompCheck(p,prevY){
   }
 }
 function collideHead(p){
-  const b=game.ball,c=characterCard(p.charId),hx=p.x,hy=p.y-CONFIG.physics.headOffset,hr=CONFIG.physics.headRadius*c.head;
+  const b=game.ball;
+  if(b.fire>0&&b.fireOwner!==0&&p.id!==b.fireOwner)return;
+  const c=characterCard(p.charId),hx=p.x,hy=p.y-CONFIG.physics.headOffset,hr=CONFIG.physics.headRadius*c.head;
   const dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),min=hr+b.r;
   if(d<min&&d>0){
     const nx=dx/d,ny=dy/d;b.x=hx+nx*(min+1);b.y=hy+ny*(min+1);
@@ -449,7 +489,7 @@ function scoreGoal(scoringPlayer){
 function kickoff(){
   game.p1.x=330;game.p2.x=950;game.p1.y=game.p2.y=CONFIG.world.groundY;
   game.p1.vx=game.p1.vy=game.p2.vx=game.p2.vy=0;game.p1.grounded=game.p2.grounded=true;
-  game.ball={x:CONFIG.world.width/2,y:-24,vx:(Math.random()-.5)*1.5,vy:0,r:CONFIG.physics.ballRadius,fire:0,spin:0,prevX:CONFIG.world.width/2,prevY:-24};
+  game.ball={x:CONFIG.world.width/2,y:-24,vx:(Math.random()-.5)*1.5,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-24};
   game.countdown=CONFIG.timing.countdownSeconds;$("#countdownOverlay").hidden=false;$("#countdownOverlay").textContent="3";
 }
 function finishGame(){
