@@ -255,7 +255,10 @@ function onGameKeyUp(e){
 }
 window.addEventListener("keydown",onGameKeyDown,{passive:false});
 window.addEventListener("keyup",onGameKeyUp);
-window.addEventListener("blur",()=>{inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};if(game){game.p1.jumpInputPrev=game.p2.jumpInputPrev=false;game.p1.kickInputPrev=game.p2.kickInputPrev=false;game.p1.powerInputPrev=game.p2.powerInputPrev="";}});
+window.addEventListener("blur",clearMatchInputs);
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&started&&!paused)togglePause();});
+document.addEventListener("contextmenu",e=>{if(e.target.closest("#matchScreen"))e.preventDefault();});
+function clearMatchInputs(){inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};if(game){game.p1.jumpInputPrev=game.p2.jumpInputPrev=false;game.p1.kickInputPrev=game.p2.kickInputPrev=false;game.p1.powerInputPrev=game.p2.powerInputPrev="";}}
 
 $("#pauseBtn").addEventListener("click",togglePause);
 $("#resumeBtn").addEventListener("click",togglePause);
@@ -265,12 +268,25 @@ $("#rematchBtn").addEventListener("click",()=>startMatch());
 $("#resultSetupBtn").addEventListener("click",()=>{renderSetup();goScreen("setupScreen");});
 $("#resultMenuBtn").addEventListener("click",()=>goScreen("menuScreen"));
 function togglePause(){
-  if(!started||finished)return;paused=!paused;$("#pauseOverlay").hidden=!paused;
+  if(!started||finished)return;paused=!paused;if(paused)clearMatchInputs();$("#pauseOverlay").hidden=!paused;
   $("#pauseBtn").textContent=paused?"▶":"Ⅱ";
   if(!paused){lastFrame=performance.now();accumulator=0;}
 }
+function prepareMatchDisplay(){
+  try{
+    if(screen.orientation&&typeof screen.orientation.lock==="function"){
+      const lock=screen.orientation.lock("landscape");if(lock&&typeof lock.catch==="function")lock.catch(()=>{});
+    }
+  }catch{}
+  try{
+    if(document.documentElement.requestFullscreen&&!document.fullscreenElement){
+      const request=document.documentElement.requestFullscreen();if(request&&typeof request.catch==="function")request.catch(()=>{});
+    }
+  }catch{}
+}
 function startMatch(){
   started=true;paused=false;finished=false;mode=mode==="local"?"local":"ai";
+  prepareMatchDisplay();
   game=createWorld();inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};particles.length=0;
   $("#scoreLeft").textContent="0";$("#scoreRight").textContent="0";$("#pauseOverlay").hidden=true;$("#eventOverlay").hidden=true;$("#goldenOverlay").hidden=true;
   $("#nameLeft").textContent=characterCard(chosen[1]).name;$("#nameRight").textContent=mode==="ai"?"CPU • "+characterCard(chosen[2]).name:characterCard(chosen[2]).name;
@@ -293,10 +309,7 @@ function frame(now){
 }
 function jumpPlayer(id){
   if(!game||paused||finished||game.countdown>0)return;
-  const p=id===1?game.p1:game.p2;
-  if(!p.grounded)return;
-  const c=characterCard(p.charId);p.jumpBuffer=CONFIG.physics.jumpBuffer;
-  p.anim=1;playSound("jump");
+  inputs[id].jump=true;
 }
 function kickPlayer(id){
   if(!game||paused||finished||game.countdown>0)return;
@@ -314,7 +327,7 @@ function usePower(id,powerId){
   switch(powerId){
     case "freeze": enemy.frozen=CONFIG.powers.freeze.duration;burst(p.x,p.y-100,"#a8ebff",20);showToast("تجميد الخصم! ❄️");playSound("power");break;
     case "bigGoal": game.bigGoal[id===1?2:1]=CONFIG.powers.bigGoal.duration;burst(id===1?CONFIG.world.width-30:30,CONFIG.world.goalTop,"#d2ff68",20);showToast("مرمى الخصم أصبح أكبر! 🥅");playSound("power");break;
-    case "fireball": game.ball.fire=CONFIG.powers.fireball.duration;game.ball.fireOwner=id;game.ball.vx*=1.4;game.ball.vy*=1.4;game.ball.vx=Math.max(-CONFIG.physics.ballMaxSpeed,Math.min(CONFIG.physics.ballMaxSpeed,game.ball.vx));burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");playSound("power");break;
+    case "fireball": {game.ball.fire=CONFIG.powers.fireball.duration;game.ball.fireOwner=id;const sign=game.ball.vx===0?p.dir:Math.sign(game.ball.vx);game.ball.vx=sign*Math.max(300,Math.abs(game.ball.vx)*1.4);game.ball.vy*=1.4;game.ball.vx=Math.max(-CONFIG.physics.ballMaxSpeed,Math.min(CONFIG.physics.ballMaxSpeed,game.ball.vx));burst(game.ball.x,game.ball.y,"#ff713e",22);showToast("كرة نارية! 🔥");playSound("power");break;}
     case "giantJump": p.giant=CONFIG.powers.giantJump.duration;p.vy=-CONFIG.physics.giantJumpVelocity;p.grounded=false;p.coyoteTimer=0;p.jumpBuffer=0;burst(p.x,p.y,"#b7ff4b",18);showToast("قفزة عملاقة! 🚀");playSound("power");break;
     case "speed": p.speedBoost=CONFIG.powers.speed.duration;burst(p.x,p.y-80,"#fff07a",16);showToast("سرعة مضاعفة! ⚡");playSound("power");break;
     case "shield": game.shield[id]=CONFIG.powers.shield.duration;burst(id===1?45:CONFIG.world.width-45,CONFIG.world.groundY-90,"#66d9ff",18);showToast("درع المرمى مفعّل! 🛡️");playSound("power");break;
@@ -401,11 +414,11 @@ function updateGame(dt){
   if(simEvents&SIM_EVENT.STOMP){playSound("stomp");burst(game.ball.x,game.ball.y,"#e6ff7a",14);game.shake=CONFIG.graphics.shake;}
   if(simEvents&SIM_EVENT.KICK){burst(game.ball.x,game.ball.y,game.ball.fire>0?"#ff6b37":"#eff9ff",game.ball.fire>0?18:9);game.shake=CONFIG.graphics.shake*.3;}
   if(simEvents&SIM_EVENT.SHIELD){burst(game.ball.x,game.ball.y,"#6bdcff",12);}
-  if(simEvents&SIM_EVENT.PLAYER_HIT){burst(game.p1.x+game.p2.x? (game.p1.x+game.p2.x)/2:game.ball.x,game.ball.y,"#ff8c56",8);}
+  if(simEvents&SIM_EVENT.PLAYER_HIT){burst((game.p1.x+game.p2.x)/2,game.ball.y,"#ff8c56",8);}
   updateFireParticles(dt);updatePowerButtons();
   if(game.shake>0)game.shake=Math.max(0,game.shake-dt*18);
   $("#scoreLeft").textContent=game.scoreA;$("#scoreRight").textContent=game.scoreB;
-  if(game.goldenGoal){$("#gameClock").textContent="★";$("#clockCaption").textContent="GOLDEN GOAL";}
+  if(game.goldenGoal){$("#gameClock").textContent=String(Math.ceil(game.goldenRemaining)).padStart(2,"0");$("#clockCaption").textContent="GOLDEN GOAL";}
   else{$("#gameClock").textContent=String(Math.ceil(game.remaining)).padStart(2,"0");$("#clockCaption").textContent="SECONDS";}
 }
 function updatePowerTimers(p,dt){
@@ -497,8 +510,8 @@ function updateAI(dt){
     const target=Math.max(CONFIG.world.goalX+CONFIG.physics.playerCollisionRadius,Math.min(CONFIG.world.width-CONFIG.world.goalX-CONFIG.physics.playerCollisionRadius,predictedX+positionError));
     game.ai.left=target<p.x-16;game.ai.right=target>p.x+16;
     game.ai.jump=(b.y<p.y-100&&Math.abs(b.x-p.x)<ai.jumpDistance&&p.grounded);
-    game.ai.kick=(Math.abs(b.x-p.x)<ai.kickDistance&&Math.abs(b.y-(p.y-CONFIG.physics.headOffset))<130);
-    game.ai.power=!p.powers.every(x=>x.used)&&Math.abs(b.x-p.x)<135;
+    game.ai.kick=(Math.abs(b.x-p.x)<ai.kickDistance&&Math.abs(b.y-(p.y-CONFIG.physics.footOffsetY))<190);
+    game.ai.power=Math.abs(b.x-p.x)<155;
     game.ai.wait=ai.reaction;
   }
   inputs[2].left=game.ai.left;inputs[2].right=game.ai.right;
@@ -632,12 +645,12 @@ function finishGame(){
   const a=game.scoreA,b=game.scoreB,draw=a===b,winner=a>b?1:b>a?2:0;
   let reward=draw?CONFIG.rewards.draw:(winner===1?CONFIG.rewards.win:CONFIG.rewards.loss);
   saved.played++;if(winner===1){saved.wins++;saved.streak++;saved.bestStreak=Math.max(saved.bestStreak,saved.streak);saved.cups+=3;}else if(winner===2){saved.cups=Math.max(0,saved.cups-1);saved.streak=0;}else{saved.streak=0;}
-  saved.coins+=reward;saveData();
+  saved.coins+=reward+CONFIG.rewards.goal*(a+b);const totalReward=reward+CONFIG.rewards.goal*(a+b);saveData();
   $("#resultMedal").textContent=draw?"🤝":winner===1?"🏆":"⚽";
   $("#resultTitle").textContent=draw?"تعادل!":winner===1?"فوز رائع!":"حاول مرة أخرى";
   $("#resultDescription").textContent=draw?"مباراة متكافئة حتى النهاية.":(winner===1?characterCard(chosen[1]).ar:characterCard(chosen[2]).ar)+" حسم المواجهة!";
   $("#resultNameA").textContent=characterCard(chosen[1]).name;$("#resultNameB").textContent=mode==="ai"?"CPU":characterCard(chosen[2]).name;
-  $("#resultScoreA").textContent=a;$("#resultScoreB").textContent=b;$("#matchReward").textContent="🪙 +"+reward;
+  $("#resultScoreA").textContent=a;$("#resultScoreB").textContent=b;$("#matchReward").textContent="🪙 +"+totalReward;
   goScreen("resultScreen");playSound("whistleEnd");
 }
 function updateFireParticles(dt){
