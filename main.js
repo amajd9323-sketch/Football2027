@@ -778,9 +778,9 @@ function drawStadium(){
 }
 function drawGoals(){
   const base=CONFIG.world.goalBottom,top=CONFIG.world.goalTop;
-  const leftTop=game.bigGoal[1]>0?top-65:top,rightTop=game.bigGoal[2]>0?top-65:top;
+  const leftTop=goalTopFor(game,1),rightTop=goalTopFor(game,2);
   ctx.fillStyle="#07131d88";ctx.fillRect(0,leftTop,CONFIG.world.goalX,base-leftTop);ctx.fillRect(CONFIG.world.width-CONFIG.world.goalX,rightTop,CONFIG.world.goalX,base-rightTop);
-  ctx.strokeStyle="#edf6ff";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(CONFIG.world.goalX,leftTop);ctx.lineTo(CONFIG.world.goalX,base);ctx.lineTo(0,base);ctx.lineTo(0,leftTop);ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX,rightTop);ctx.lineTo(CONFIG.world.width-CONFIG.world.goalX,base);ctx.lineTo(CONFIG.world.width,base);ctx.lineTo(CONFIG.world.width,rightTop);ctx.stroke();
+  ctx.strokeStyle="#edf6ff";ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(CONFIG.world.goalX,leftTop);ctx.lineTo(CONFIG.world.goalX,base);ctx.lineTo(0,base);ctx.lineTo(0,leftTop);ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX,rightTop);ctx.lineTo(CONFIG.world.width-CONFIG.world.goalX,base);ctx.lineTo(CONFIG.world.width,base);ctx.lineTo(CONFIG.world.width,rightTop);ctx.stroke();
   ctx.strokeStyle="#ffffff65";ctx.lineWidth=1;
   for(let y=leftTop+10;y<base;y+=14){ctx.beginPath();ctx.moveTo(1,y);ctx.lineTo(CONFIG.world.goalX+2,y);ctx.stroke();}
   for(let y=rightTop+10;y<base;y+=14){ctx.beginPath();ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX-2,y);ctx.lineTo(CONFIG.world.width-1,y);ctx.stroke();}
