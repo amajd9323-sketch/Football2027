@@ -85,7 +85,6 @@ let chosen={1:"roksi",2:"hema"};
 let selectedPowers=["freeze","fireball","giantJump"];
 let game=null,raf=0,lastFrame=0,accumulator=0,started=false,paused=false,finished=false,debugEnabled=false,debugFps=60;
 let inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};
-let images={};
 let audioContext=null,musicTimer=null,musicIndex=0;
 const particles=[];
 const canvas=$("#pitch"),ctx=canvas.getContext("2d");
@@ -175,11 +174,6 @@ function applyLanguage(){
   $$("h1,h2,b,button,small,p,span").forEach(el=>{if(!el.dataset.orig)el.dataset.orig=el.textContent;const key=el.dataset.orig.trim();if(map[key])el.textContent=map[key];});
 }
 
-function loadCharacterImages(){
-  CHARACTERS.forEach(c=>{if(!c.img)return;const im=new Image();im.src=c.img;im.onload=()=>{images[c.id]=im;};im.onerror=()=>{};});
-}
-loadCharacterImages();
-
 function characterCard(id){return charById(id);}
 function createPlayer(id,x,charId){
   const c=characterCard(charId);
@@ -240,6 +234,7 @@ function renderControls(){
 function onGameKeyDown(e){
   if(!started||$("#matchScreen").hidden)return;
   const k=e.key.toLowerCase();
+  if(e.target&&["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)&&k!=="f2")return;
   const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9","escape","f2"];
   if(gameKeys.includes(k))e.preventDefault();
   if(k==="f2"){debugEnabled=!debugEnabled;$("#debugPanel").hidden=!debugEnabled;return;}
@@ -380,12 +375,14 @@ function updateGame(dt){
     const digit=Math.ceil(game.countdown);
     $("#countdownOverlay").hidden=game.countdown<=0;
     $("#countdownOverlay").textContent=String(Math.max(1,digit));
-    if(game.countdown<=0){game.countdown=0;game.ball.y=CONFIG.physics.ballRadius+8;game.ball.vx=0;game.ball.vy=0;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;playSound("whistle");}
+    if(game.countdown<=0){game.countdown=0;game.ball.y=90;game.ball.vx=0;game.ball.vy=0;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;playSound("whistle");}
     return;
   }
   $("#countdownOverlay").hidden=true;
   game.elapsed+=dt;
   if(game.celebration>0){
+    const celebratoryRate=game.slowTimer>0?.4:1;
+    game.p1.anim+=dt*8*celebratoryRate;game.p2.anim+=dt*8*celebratoryRate;
     game.celebration-=dt;game.slowTimer=Math.max(0,game.slowTimer-dt);
     if(game.celebration<=0){
       if(game.goldenPending){finishGame();return;}
@@ -791,8 +788,9 @@ function drawPlayer(p,alpha=1){
   const x=(p.renderPrevX??p.x)+(p.x-(p.renderPrevX??p.x))*alpha;
   const y=(p.renderPrevY??p.y)+(p.y-(p.renderPrevY??p.y))*alpha;
   const r=CONFIG.physics.headRadius*c.head,hy=-CONFIG.physics.headOffset;
-  const moving=Math.abs(p.vx)>36,bob=p.grounded&&moving?Math.sin(p.anim)*3:0;
+  const moving=Math.abs(p.vx)>36;
   const scorer=game&&game.celebration>0&&game.scoringPlayer===p.id;
+  const bob=p.grounded&&(moving||scorer)?Math.sin(p.anim)*(scorer?6:3):0;
   const skin=c.id==="roksi"?"#efc4a3":c.id==="hema"?"#c79068":"#e0ae87";
   const hair={roksi:"#563827",hema:"#1b252d",blaze:"#b9472e",luna:"#503664",titan:"#332820",nova:"#184441",volt:"#71531b",echo:"#273847"}[c.id]||"#332820";
   const kickT=p.kickTimer>0?Math.max(0,Math.min(1,1-p.kickTimer/CONFIG.physics.kickDuration)):0;
@@ -839,7 +837,7 @@ function drawPlayer(p,alpha=1){
   else if(c.id==="echo"){ctx.strokeStyle="#1a2938";ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,r*1.02,Math.PI*1.08,Math.PI*1.92);ctx.stroke();}
   ctx.restore();
   ctx.fillStyle="#fff";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.lineWidth=4;ctx.strokeStyle="#07111d";
-  ctx.strokeText(c.name,0,-CONFIG.graphics.spriteHeight-8);ctx.fillText(c.name,0,-CONFIG.graphics.spriteHeight-8);
+  ctx.strokeText(c.name,0,-CONFIG.physics.headOffset-headR-13);ctx.fillText(c.name,0,-CONFIG.physics.headOffset-headR-13);
   ctx.restore();
 }
 function drawBall(b,alpha=1){
