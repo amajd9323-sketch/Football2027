@@ -369,7 +369,7 @@ function processInputActions(){
   for(let id=1;id<=2;id++){
     const p=id===1?game.p1:game.p2,inp=inputs[id];
     /* الأصوات والاهتزاز خارج المحاكاة؛ كل تغيير في حالة المباراة داخل step. */
-    if(inp.jump&&!p.jumpSoundPrev){playSound("jump");if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);}
+    if(inp.jump&&!p.jumpSoundPrev&&(id===1||mode==="local")){playSound("jump");if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);}
     p.jumpSoundPrev=!!inp.jump;
   }
 }
@@ -651,7 +651,8 @@ function step(state,inputFrame,dt){
   /* تصادم دائري للرأس باستخدام السرعة النسبية والارتداد. */
   let head=charById(p1.charId),hx=p1.x,hy=p1.y-CONFIG.physics.headOffset,hr=CONFIG.physics.headRadius*head.head;
   let dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),min=hr+b.r;
-  if(d<min&&d>0){
+  if(d<min){
+    if(d<1e-6){dx=0;dy=-1;d=1;}
     const nx=dx/d,ny=dy/d;b.x=hx+nx*(min+.2);b.y=hy+ny*(min+.2);
     let rvx=b.vx-p1.vx,rvy=b.vy-p1.vy,vn=rvx*nx+rvy*ny;
     if(vn<0){rvx-=(1+CONFIG.physics.headRestitution)*vn*nx;rvy-=(1+CONFIG.physics.headRestitution)*vn*ny;}
@@ -662,7 +663,8 @@ function step(state,inputFrame,dt){
   }
   head=charById(p2.charId);hx=p2.x;hy=p2.y-CONFIG.physics.headOffset;hr=CONFIG.physics.headRadius*head.head;
   dx=b.x-hx;dy=b.y-hy;d=Math.hypot(dx,dy);min=hr+b.r;
-  if(d<min&&d>0){
+  if(d<min){
+    if(d<1e-6){dx=0;dy=-1;d=1;}
     const nx=dx/d,ny=dy/d;b.x=hx+nx*(min+.2);b.y=hy+ny*(min+.2);
     let rvx=b.vx-p2.vx,rvy=b.vy-p2.vy,vn=rvx*nx+rvy*ny;
     if(vn<0){rvx-=(1+CONFIG.physics.headRestitution)*vn*nx;rvy-=(1+CONFIG.physics.headRestitution)*vn*ny;}
