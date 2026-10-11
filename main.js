@@ -52,7 +52,7 @@ const CHARACTERS = [
   {id:"hema",name:"HEMA / IBI",ar:"هيما / إيبي",tag:"KING",color:"#2452a1",accent:"#c83652",speed:5.05,jump:13.1,kick:1.04,head:1.02,img:"./assets/hema.webp",fallback:"👑"},
   {id:"blaze",name:"BLAZE",ar:"بليز",tag:"STRIKER",color:"#f06442",accent:"#ffbd63",speed:5.35,jump:12.5,kick:1.16,head:0.98,fallback:"🔥"},
   {id:"luna",name:"LUNA",ar:"لونا",tag:"TRICKSTER",color:"#a07aff",accent:"#f2a1e7",speed:5.2,jump:13.7,kick:0.94,head:1.04,fallback:"🌙"},
-  {id:"titan",name:"TITAN",ar:"تايتن",tag:"TANK",color:"#b0784b",accent:"#e3d5be",speed:4.35,jump:11.6,kick:1.23,head:1.14,fallback:"🪨"},
+  {id:"titan",name:"TITAN",ar:"تايتن",tag:"TANK",color:"#b0784b",accent:"#e3d5be",speed:4.35,jump:11.6,kick:1.23,head:1.12,fallback:"🪨"},
   {id:"nova",name:"NOVA",ar:"نوفا",tag:"SPRINTER",color:"#25a9a1",accent:"#a7fff1",speed:5.65,jump:13.0,kick:0.91,head:0.98,fallback:"💫"},
   {id:"volt",name:"VOLT",ar:"فولت",tag:"JUMPER",color:"#d4bb33",accent:"#fff0a0",speed:4.85,jump:14.4,kick:0.98,head:1.0,fallback:"⚡"},
   {id:"echo",name:"ECHO",ar:"إيكو",tag:"BALANCED",color:"#788c9c",accent:"#d6e4ef",speed:5.0,jump:13.0,kick:1.0,head:1.0,fallback:"🎧"}
