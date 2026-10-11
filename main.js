@@ -99,6 +99,8 @@ function goScreen(id){
   if(id==="menuScreen")updateProfileUI();
 }
 function charById(id){for(let i=0;i<CHARACTERS.length;i++){if(CHARACTERS[i].id===id)return CHARACTERS[i];}return CHARACTERS[0];}
+function findPowerSlot(player,id){for(let i=0;i<player.powers.length;i++){if(player.powers[i].id===id)return player.powers[i];}return null;}
+function findReadyPower(player){for(let i=0;i<player.powers.length;i++){const slot=player.powers[i];if(!slot.used&&slot.charge>=1)return slot;}return null;}
 function setupMode(next){mode=next;$("#vsAiBtn").classList.toggle("chosen",mode==="ai");$("#localBtn").classList.toggle("chosen",mode==="local");$("#aiSetup").hidden=mode!=="ai";}
 function openSetup(nextMode){
   setupMode(nextMode);activeAssign=1;renderSetup();goScreen("setupScreen");
@@ -194,7 +196,7 @@ function createWorld(){
 function resizeCanvas(){
   if(!canvas||!canvas.clientWidth||!canvas.clientHeight)return;
   const ratio=Math.min(window.devicePixelRatio||1,2);
-  canvas.width=Math.round(canvas.clientWidth*ratio);canvas.height=Math.round(canvas.clientHeight*ratio);
+  canvas.width=Math.round(canvas.clientWidth*ratio);canvas.height=Math.round(canvas.clientHeight*ratio);stadiumGradient=null;
 }
 window.addEventListener("resize",resizeCanvas);window.addEventListener("orientationchange",()=>setTimeout(resizeCanvas,180));
 
@@ -361,7 +363,7 @@ function updatePowerButtons(){
   if(!game)return;
   for(let i=0;i<powerButtons.length;i++){
     const btn=powerButtons[i];
-    const id=Number(btn.dataset.player),p=id===1?game.p1:game.p2,slot=p.powers.find(x=>x.id===btn.dataset.power);
+    const id=Number(btn.dataset.player),p=id===1?game.p1:game.p2,slot=findPowerSlot(p,btn.dataset.power);
     if(!slot)return;
     const pct=Math.floor(slot.charge*100);
     btn.style.setProperty("--charge",pct+"%");
@@ -577,7 +579,7 @@ function updateAI(dt){
   const targetX=b.x+(b.vx>0?25:-25);
   const error=Math.abs(targetX-p.x);
   inputs[2].kick=!!(game.ai.kick&&p.kickCooldown<=0&&(Math.abs(b.y-aim)<300||error<ai.kickDistance*ai.accuracy));
-  const readyPower=p.powers.find(s=>!s.used&&s.charge>=1);
+  const readyPower=findReadyPower(p);
   inputs[2].power=game.ai.power&&readyPower&&simRandom()<.006*ai.aggression?readyPower.id:"";
 }
 function step(state,inputFrame,dt){
