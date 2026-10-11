@@ -1,1 +1,102 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/><meta name="theme-color" content="#07131f"/><title>EuroKick 2D</title><link rel="stylesheet" href="./style.css"/></head><body><div id="app"><header><div class="brand"><span class="ball">⚽</span><div><b>EUROKICK <em>2D</em></b><small>FOOTBALL • ARCADE</small></div></div><button id="soundBtn" class="iconBtn">♫</button></header><main id="menu"><div class="hero"><span class="tag">SEASON 26/27 • ARCADE</span><h1>المباراة تبدأ<br/><span>من هنا.</span></h1><p>كرة قدم سريعة، تحكم مباشر، ومنافسة على نفس الهاتف.</p><div class="heroBall">⚽</div></div><section class="panel"><h2>اختر نمط اللعب</h2><button class="mode selected" data-mode="ai"><span class="modeIcon">🤖</span><span><b>ضد الذكاء الاصطناعي</b><small>أوفلاين • لاعب ضد الكمبيوتر</small></span><span class="arrow">←</span></button><button class="mode" data-mode="local"><span class="modeIcon">👥</span><span><b>لاعبان على نفس الهاتف</b><small>كل لاعب يتحكم من جهة</small></span><span class="arrow">←</span></button><button class="mode" data-mode="online"><span class="modeIcon">🔗</span><span><b>ملتيبلاير بكود</b><small>غرفة أونلاين • إعداد Firebase مطلوب</small></span><span class="arrow">←</span></button><div id="onlinePanel" hidden><label for="roomCode">كود الغرفة</label><input id="roomCode" maxlength="6" placeholder="مثال: K7P2QX"/><div class="split"><button id="createRoom" class="secondary">إنشاء غرفة</button><button id="joinRoom" class="secondary">انضمام</button></div><p id="onlineHint" class="hint">اللعب عبر الإنترنت يحتاج إعداد Firebase خاص بك. بقية الأنماط تعمل دون إنترنت.</p></div><button id="teamOpen" class="teamButton"><span>🏆</span><span><b>اختر فريقك</b><small id="teamSummary">ريال مدريد × برشلونة</small></span><span class="arrow">←</span></button><button id="playBtn" class="primary">ابدأ المباراة <span>←</span></button></section><footer>صُممت للهواتف • تلعب دون إنترنت</footer></main><section id="teamScreen" hidden><button class="back" id="backMenu">→ رجوع</button><h2>اختيار الفريق</h2><p class="muted">10 أندية أوروبية كبرى • موسم 2026/27</p><div id="teams" class="teams"></div><button class="primary" id="confirmTeams">تأكيد الاختيار</button></section><section id="game" hidden><div class="scorebar"><div id="teamLeft">REAL MADRID</div><div class="score"><span id="scoreA">0</span><small>:</small><span id="scoreB">0</span></div><div id="teamRight">BARCELONA</div><button id="pauseBtn" class="pause">Ⅱ</button></div><canvas id="pitch"></canvas><div class="gameMessage" id="gameMessage">انطلق!</div><div class="controls"><div class="playerControls"><div class="controlLabel">PLAYER 1</div><div class="controlRow"><button data-player="1" data-action="left">◀</button><button data-player="1" data-action="right">▶</button><button data-player="1" data-action="jump" class="jump">↟</button><button data-player="1" data-action="shoot" class="shoot">تسديد</button></div></div><div class="playerControls rightControls" id="controlsP2" hidden><div class="controlLabel">PLAYER 2</div><div class="controlRow"><button data-player="2" data-action="left">◀</button><button data-player="2" data-action="right">▶</button><button data-player="2" data-action="jump" class="jump">↟</button><button data-player="2" data-action="shoot" class="shoot">تسديد</button></div></div></div><div class="gameBottom"><span id="matchStatus">مباراة سريعة • 60 ثانية</span><button id="exitBtn">إنهاء المباراة</button></div></section></div><script type="module" src="./main.js"></script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07111d">
+  <meta name="description" content="Football 2027 Arena — fast 1v1 arcade football">
+  <title>Football 2027 Arena</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand-mark">F<span>27</span></div>
+    <div class="brand-copy"><b>FOOTBALL <i>2027</i></b><small>ARCADE FOOTBALL ARENA</small></div>
+    <div class="net-pill"><span class="pulse"></span><span id="netBadge">جاهز للعب</span></div>
+  </header>
+
+  <main id="menuScreen">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">SEASON 2026 / 27</span>
+        <h1>ملعبك.<br><em>قوانينك.</em></h1>
+        <p>واجه الكمبيوتر، العب مع صديقك، أو تحدّاه أونلاين بكود غرفة.</p>
+        <div class="hero-meta"><span>⚡ حركات خاصة</span><span>⏱ 90 ثانية</span><span>⚽ 1 ضد 1</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-a"></div><div class="orb orb-b"></div>
+        <div class="hero-player red"><div class="hero-head">😎</div><div class="hero-body"></div><div class="hero-legs"></div></div>
+        <div class="hero-ball">⚽</div>
+        <div class="hero-player blue"><div class="hero-head">😤</div><div class="hero-body"></div><div class="hero-legs"></div></div>
+        <div class="hero-spark">✦</div>
+      </div>
+    </section>
+
+    <section class="menu-layout">
+      <div class="section-heading"><div><span class="eyebrow">GAME MODES</span><h2>اختر المواجهة</h2></div><span class="small-tag">1V1 ARENA</span></div>
+      <div class="mode-grid">
+        <button class="mode-card chosen" data-mode="ai"><span class="mode-icon">🤖</span><span class="mode-text"><b>ضد الكمبيوتر</b><small>أوفلاين • متاح دائمًا</small></span><span class="mode-arrow">↙</span></button>
+        <button class="mode-card" data-mode="local"><span class="mode-icon">👥</span><span class="mode-text"><b>لاعبان على الهاتف</b><small>تحدّي مباشر على نفس الجهاز</small></span><span class="mode-arrow">↙</span></button>
+        <button class="mode-card online-mode" data-mode="online"><span class="mode-icon">🌐</span><span class="mode-text"><b>غرفة أونلاين</b><small>اتصال مباشر عبر الإنترنت</small></span><span class="mode-arrow">↙</span></button>
+      </div>
+
+      <div id="onlinePanel" class="online-panel" hidden>
+        <div class="section-heading compact"><div><span class="eyebrow">PRIVATE MATCH</span><h2>العب مع صديقك</h2></div><span class="online-dot">● ONLINE</span></div>
+        <p class="subcopy">أنشئ كودًا وأرسله لصديقك، أو اكتب كوده للانضمام. يحتاج الهاتفان إلى الإنترنت.</p>
+        <div class="room-row"><input id="roomCode" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="كود الغرفة" aria-label="كود الغرفة"><button class="btn-secondary" id="copyCode" type="button">نسخ</button></div>
+        <div class="room-actions"><button id="createRoom" class="btn-secondary" type="button">＋ إنشاء غرفة</button><button id="joinRoom" class="btn-secondary" type="button">↗ انضمام</button></div>
+        <p id="netStatus" class="net-status" role="status">اتصال مباشر عبر PeerJS؛ بعض الشبكات قد تمنع الاتصال المباشر.</p>
+      </div>
+
+      <div class="settings-panel">
+        <div class="section-heading compact"><div><span class="eyebrow">YOUR LINEUP</span><h2>اختَر ألوان فريقك</h2></div><span class="small-tag">10 CLUBS</span></div>
+        <div class="club-grid" id="teamGrid"></div>
+        <div class="power-select">
+          <div><b>قدرتك الخاصة</b><small>اختر حركة تغيّر المباراة</small></div>
+          <select id="powerSelect" aria-label="اختيار القدرة الخاصة">
+            <option value="rocket">🚀 تسديدة صاروخية</option>
+            <option value="freeze">❄️ تجميد الخصم</option>
+            <option value="giant">💪 عملاق مؤقت</option>
+          </select>
+        </div>
+        <button id="playBtn" class="btn-primary"><span>ابدأ المباراة</span><b>←</b></button>
+        <p class="fine-print">شخصيات ورسومات أصلية. أسماء الأندية لأغراض اختيار الألوان فقط.</p>
+      </div>
+    </section>
+    <footer><b>FOOTBALL 2027 ARENA</b><span>مصممة للهاتف أولًا • العب بطريقتك</span></footer>
+  </main>
+
+  <main id="gameScreen" hidden>
+    <div class="match-top">
+      <button id="exitBtn" class="round-icon" aria-label="الخروج">✕</button>
+      <div class="match-title"><span class="eyebrow">LIVE MATCH</span><b>ARENA SERIES</b></div>
+      <button id="pauseBtn" class="round-icon" aria-label="إيقاف مؤقت">Ⅱ</button>
+    </div>
+    <div class="scoreboard">
+      <div class="team-score left-score"><span class="mini-shirt red-shirt">27</span><div><small id="teamLeft">HOME</small><b id="scoreA">0</b></div></div>
+      <div class="clock"><span>TIME</span><b id="clock">90</b><i></i></div>
+      <div class="team-score right-score"><div><small id="teamRight">AWAY</small><b id="scoreB">0</b></div><span class="mini-shirt blue-shirt">11</span></div>
+    </div>
+    <div class="pitch-wrap">
+      <canvas id="pitch" width="1000" height="560" aria-label="ملعب كرة قدم ثنائي الأبعاد"></canvas>
+      <div class="match-flash" id="matchFlash"></div>
+      <div class="pause-cover" id="pauseCover" hidden><strong>إيقاف مؤقت</strong><button id="resumeBtn" class="btn-primary">تابع المباراة</button></div>
+      <div class="finish-cover" id="finishCover" hidden><span class="eyebrow">FULL TIME</span><strong id="finishTitle">انتهت المباراة</strong><div class="finish-score"><b id="finishA">0</b><i>:</i><b id="finishB">0</b></div><p id="finishMessage"></p><button id="rematchBtn" class="btn-primary">إعادة المباراة ←</button><button id="menuBtn" class="btn-secondary">العودة للقائمة</button></div>
+    </div>
+    <div class="control-area">
+      <div class="control-help"><span id="controlHint">تحرّك، اقفز، وسدّد!</span><span class="cooldown" id="cooldownText">⚡ جاهزة</span></div>
+      <div id="singleControls" class="controls single-controls">
+        <div class="dpad"><button data-player="1" data-action="left" aria-label="يسار">◀</button><button data-player="1" data-action="right" aria-label="يمين">▶</button></div>
+        <div class="action-pad"><button data-player="1" data-action="jump" class="jump-btn" aria-label="قفز">↟</button><button data-player="1" data-action="shoot" class="shoot-btn">تسديد</button><button data-player="1" data-action="power" class="power-btn">⚡<small>قوة</small></button></div>
+      </div>
+      <div id="dualControls" class="controls dual-controls" hidden>
+        <div class="player-pad"><small>PLAYER 1</small><div class="pad-row"><button data-player="1" data-action="left">◀</button><button data-player="1" data-action="right">▶</button><button data-player="1" data-action="jump" class="jump-btn">↟</button><button data-player="1" data-action="shoot" class="shoot-btn">⚽</button><button data-player="1" data-action="power" class="power-btn">⚡</button></div></div>
+        <div class="player-pad second-pad"><small>PLAYER 2</small><div class="pad-row"><button data-player="2" data-action="left">◀</button><button data-player="2" data-action="right">▶</button><button data-player="2" data-action="jump" class="jump-btn">↟</button><button data-player="2" data-action="shoot" class="shoot-btn">⚽</button><button data-player="2" data-action="power" class="power-btn">⚡</button></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
