@@ -215,6 +215,7 @@ function renderControls(){
     };
     const down=e=>{
       e.preventDefault();
+      if(!game||game.countdown>0||game.celebration>0)return;
       if(activePointerIds.has(e.pointerId))return;
       activePointerIds.add(e.pointerId);syncInput();getAudio();
       if(saved.vibrate&&navigator.vibrate)navigator.vibrate(8);
@@ -237,6 +238,7 @@ function onGameKeyDown(e){
   if(e.target&&["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)&&k!=="f2")return;
   const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9","escape","f2"];
   if(gameKeys.includes(k))e.preventDefault();
+  if(game&&(game.countdown>0||game.celebration>0)&&k!=="escape"&&k!=="f2")return;
   if(k==="f2"){debugEnabled=!debugEnabled;$("#debugPanel").hidden=!debugEnabled;return;}
   getAudio();
   if(k==="a")inputs[1].left=true;
@@ -257,6 +259,7 @@ function onGameKeyDown(e){
   else if(k==="escape")togglePause();
 }
 function onGameKeyUp(e){
+  if(e.target&&["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName))return;
   const k=e.key.toLowerCase();
   if(k==="a")inputs[1].left=false;
   else if(k==="d")inputs[1].right=false;
@@ -698,6 +701,7 @@ function step(state,inputFrame,dt){
 }
 function scoreGoal(scoringPlayer){
   if(game.celebration>0)return;
+  clearMatchInputs();
   if(scoringPlayer===1)game.scoreA++;else game.scoreB++;
   $("#scoreLeft").textContent=game.scoreA;$("#scoreRight").textContent=game.scoreB;
   game.celebration=CONFIG.timing.goalPause;game.slowTimer=CONFIG.timing.goalSlowSeconds;
@@ -709,6 +713,7 @@ function scoreGoal(scoringPlayer){
 }
 function simRandom(){if(!game)return .5;game.rng=(Math.imul(game.rng,1664525)+1013904223)>>>0;return game.rng/4294967296;}
 function kickoff(){
+  clearMatchInputs();
   game.p1.x=330;game.p2.x=950;game.p1.y=game.p2.y=CONFIG.world.groundY;
   game.p1.vx=game.p1.vy=game.p2.vx=game.p2.vy=0;game.p1.grounded=game.p2.grounded=true;
   game.p1.coyoteTimer=game.p2.coyoteTimer=CONFIG.physics.coyoteTime;
