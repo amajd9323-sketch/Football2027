@@ -98,7 +98,8 @@ function startGame(remoteStarted){
   $("#scoreA").textContent="0";$("#scoreB").textContent="0";$("#clock").textContent="90";
   $("#controlHint").textContent=mode==="online"?(isHost?"أنت الفريق الأيسر • العب للفوز":"أنت الفريق الأيمن • العب للفوز"):mode==="local"?"كل لاعب يملك أزراره":"تحرّك، اقفز، سدّد واستخدم قوتك!";
   $("#dualControls").hidden=!(mode==="local");$("#singleControls").hidden=mode==="local";
-  if(mode==="online"){$("#singleControls").hidden=true;$("#dualControls").hidden=false;$("#controlHint").textContent=isHost?"أنت الفريق الأيسر • صديقك على اليمين":"أنت الفريق الأيمن • المضيف على اليسار";}
+  $(".player-pad").forEach(p=>p.hidden=false);
+  if(mode==="online"){$("#singleControls").hidden=true;$("#dualControls").hidden=false;const pads=$(".player-pad");if(pads.length===2){pads[0].hidden=!isHost;pads[1].hidden=isHost;}$("#controlHint").textContent=isHost?"أنت الفريق الأيسر • صديقك على اليمين":"أنت الفريق الأيمن • المضيف على اليسار";}
   fitCanvas();cancelAnimationFrame(raf);lastFrame=performance.now();stateSend=0;raf=requestAnimationFrame(gameLoop);
 }
 function enterGame(){if(mode==="online"){if(!onlineConnected){setStatus("اتصل بغرفة قبل بدء المباراة.","غير متصل");return;}if(isHost)startOnlineMatch();else if(conn&&conn.open)conn.send({type:"start_request"});return;}startGame(false);}
@@ -174,7 +175,6 @@ function updateGame(dt){
   const p1=world.p1,p2=world.p2,b=world.ball;
   if(world.goalPause>0){world.goalPause-=dt;if(world.goalPause<=0)serveBall();updateHud();return;}
   p1.cooldown=Math.max(0,p1.cooldown-dt);p2.cooldown=Math.max(0,p2.cooldown-dt);p1.frozen=Math.max(0,p1.frozen-dt);p2.frozen=Math.max(0,p2.frozen-dt);p1.giant=Math.max(0,p1.giant-dt);p2.giant=Math.max(0,p2.giant-dt);p1.kick=Math.max(0,p1.kick-dt);p2.kick=Math.max(0,p2.kick-dt);
-  if(mode==="ai"||mode==="online"&&!isHost===false){/* host/offline branch keeps authoritative physics */}
   if(mode==="ai"){
     const target=b.x+ (b.vx>0?35:-12);
     held[2].left=target<p2.x-17;held[2].right=target>p2.x+17;
