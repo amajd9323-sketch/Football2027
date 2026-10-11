@@ -22,3 +22,12 @@ Online rooms/server matchmaking, progression, upgrades, leagues and missions are
 The repository now includes a PWA manifest and service worker. Open the HTTPS site once while online so the game shell and character artwork are cached; after that, the app shell can load offline. On Android Chrome, use the browser menu and choose **Install app** or **Add to Home screen** when offered. The game is configured for landscape mode.
 
 This web-cache update does not add real-time online multiplayer. Online rooms and server-authoritative match simulation remain a separate phase.
+
+## Phase 1 physics update
+
+- The simulation advances at 60 Hz with four 1/240-second substeps. Player and ball velocities are expressed in logical pixels per second, with seeded bot decisions and a deterministic, DOM-free physics step.
+- Circular head impacts use relative velocity; the foot follows a kick arc; jump buffering, coyote time, stomp strikes, goal-bar rebounds, ball-touch power charging and a 30-second golden-goal limit are enabled.
+- Touch, keyboard and CPU controls use one input shape. Touch buttons support multi-pointer capture, saved size/opacity, and an F2 debug panel with hitboxes, FPS and live gravity/speed/kick sliders.
+- The 1280×720 scene is letterboxed rather than stretched. The web shell has no remote font/CDN dependency and can cache its built Vite assets after the first online launch.
+
+The phase-one build remains offline/local. Server-authoritative online matches, reconnect handling and matchmaking are still phase 3; progression leagues, character upgrades and daily missions are phase 2.
