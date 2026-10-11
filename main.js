@@ -165,7 +165,7 @@ $("#clearDataBtn").addEventListener("click",()=>{
 function applyScale(){document.documentElement.style.setProperty("--control-scale",String(saved.controlScale/100));}
 function applyControlOpacity(){document.documentElement.style.setProperty("--control-opacity",String(saved.controlOpacity/100));}
 function applyLanguage(){
-  const translatable=$("h1,h2,b,button,small,p,span");
+  const translatable=$$("h1,h2,b,button,small,p,span");
   if(saved.language==="ar"){
     translatable.forEach(el=>{if(el.dataset.orig)el.textContent=el.dataset.orig;});
     return;
