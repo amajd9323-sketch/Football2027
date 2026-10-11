@@ -83,7 +83,7 @@ function updateProfileUI(){
 let mode="ai",activeAssign=1,difficulty="normal";
 let chosen={1:"roksi",2:"hema"};
 let selectedPowers=["freeze","fireball","giantJump"];
-let game=null,raf=0,lastFrame=0,accumulator=0,started=false,paused=false,finished=false,debugEnabled=false;
+let game=null,raf=0,lastFrame=0,accumulator=0,started=false,paused=false,finished=false,debugEnabled=false,debugFps=60;
 let inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};
 let images={};
 let audioContext=null,musicTimer=null,musicIndex=0;
@@ -184,7 +184,7 @@ function characterCard(id){return charById(id);}
 function createPlayer(id,x,charId){
   const c=characterCard(charId);
   const powers=selectedPowers.map(powerId=>({id:powerId,charge:0,used:false}));
-  return {id,charId,x,y:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0,prevY:CONFIG.world.groundY};
+  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
 }
 function createWorld(){
   return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
@@ -304,7 +304,8 @@ function stopLoop(){cancelAnimationFrame(raf);started=false;paused=false;}
 function frame(now){
   if(!started||$("#matchScreen").hidden)return;
   let elapsed=Math.min(.1,(now-lastFrame)/1000);lastFrame=now;
-  if(debugEnabled)$("#debugFps").textContent=String(Math.round(1/Math.max(elapsed,.001)));
+  debugFps=Math.round(1/Math.max(elapsed,.001));
+  if(debugEnabled)$("#debugFps").textContent=String(debugFps);
   if(!paused){accumulator+=elapsed;while(accumulator>=CONFIG.timing.fixedStep){updateGame(CONFIG.timing.fixedStep);accumulator-=CONFIG.timing.fixedStep;if(finished)break;}}
   drawGame(accumulator/CONFIG.timing.fixedStep);
   raf=requestAnimationFrame(frame);
@@ -388,7 +389,7 @@ function updateGame(dt){
     if(game.remaining<=0){
       game.remaining=0;
       if(game.scoreA===game.scoreB){
-        game.goldenGoal=true;game.goldenRemaining=CONFIG.timing.goldenGoalAfter;game.banner="الهدف الذهبي!";game.bannerTime=2.5;game.countdown=CONFIG.timing.countdownSeconds;game.ball={x:CONFIG.world.width/2,y:-CONFIG.physics.ballRadius-8,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-CONFIG.physics.ballRadius-8};$("#goldenOverlay").hidden=false;
+        game.goldenGoal=true;game.goldenRemaining=CONFIG.timing.goldenGoalAfter;game.banner="الهدف الذهبي!";game.bannerTime=2.5;game.countdown=CONFIG.timing.countdownSeconds;game.ball={x:CONFIG.world.width/2,y:-CONFIG.physics.ballRadius-8,renderPrevX:CONFIG.world.width/2,renderPrevY:-CONFIG.physics.ballRadius-8,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-CONFIG.physics.ballRadius-8};$("#goldenOverlay").hidden=false;
       }else{finishGame();return;}
     }
   }else{
@@ -406,6 +407,9 @@ function updateGame(dt){
   game.p1.speedBoost=Math.max(0,game.p1.speedBoost-dt);game.p2.speedBoost=Math.max(0,game.p2.speedBoost-dt);
   if(mode==="ai")updateAI(dt);
   processInputActions();
+  game.p1.renderPrevX=game.p1.x;game.p1.renderPrevY=game.p1.y;
+  game.p2.renderPrevX=game.p2.x;game.p2.renderPrevY=game.p2.y;
+  game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;
   let simEvents=0;
   const subDt=dt/CONFIG.timing.physicsSubsteps;
   for(let sub=0;sub<CONFIG.timing.physicsSubsteps;sub++){
@@ -628,7 +632,7 @@ function scoreGoal(scoringPlayer){
   $("#scoreLeft").textContent=game.scoreA;$("#scoreRight").textContent=game.scoreB;
   game.celebration=CONFIG.timing.goalPause;game.slowTimer=CONFIG.timing.goalSlowSeconds;
   game.goldenPending=game.goldenGoal;
-  game.ball.vx=0;game.ball.vy=0;game.ball.x=CONFIG.world.width/2;game.ball.y=CONFIG.world.groundY-85;
+  game.ball.vx=0;game.ball.vy=0;game.ball.x=CONFIG.world.width/2;game.ball.y=CONFIG.world.groundY-85;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;
   game.shake=CONFIG.graphics.shake;burst(game.ball.x,game.ball.y,"#d5ff62",32);playSound("goal");
   if(saved.vibrate&&navigator.vibrate)navigator.vibrate([60,30,100]);
   showToast("هــــدف! ⚽ "+(scoringPlayer===1?characterCard(chosen[1]).ar:characterCard(chosen[2]).ar));
@@ -639,7 +643,7 @@ function kickoff(){
   game.p1.vx=game.p1.vy=game.p2.vx=game.p2.vy=0;game.p1.grounded=game.p2.grounded=true;
   game.p1.coyoteTimer=game.p2.coyoteTimer=CONFIG.physics.coyoteTime;
   game.p1.jumpBuffer=game.p2.jumpBuffer=0;game.p1.kickTimer=game.p2.kickTimer=0;
-  game.ball={x:CONFIG.world.width/2,y:-CONFIG.physics.ballRadius-8,vx:(simRandom()-.5)*90,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-CONFIG.physics.ballRadius-8};
+  game.ball={x:CONFIG.world.width/2,y:-CONFIG.physics.ballRadius-8,renderPrevX:CONFIG.world.width/2,renderPrevY:-CONFIG.physics.ballRadius-8,vx:(simRandom()-.5)*90,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-CONFIG.physics.ballRadius-8};
   game.countdown=CONFIG.timing.countdownSeconds;$("#countdownOverlay").hidden=false;$("#countdownOverlay").textContent="3";
 }
 function finishGame(){
@@ -667,11 +671,13 @@ function burst(x,y,color,count){
 function drawGame(alpha){
   if(!game)return;
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
-  const sx=canvas.width/CONFIG.world.width,sy=canvas.height/CONFIG.world.height;
-  ctx.setTransform(sx,0,0,sy,0,0);
+  const scale=Math.min(canvas.width/CONFIG.world.width,canvas.height/CONFIG.world.height);
+  const offsetX=(canvas.width-CONFIG.world.width*scale)/2,offsetY=(canvas.height-CONFIG.world.height*scale)/2;
+  ctx.fillStyle="#07111d";ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.setTransform(scale,0,0,scale,offsetX,offsetY);
   const shake=game.shake>0?Math.sin(game.elapsed*90)*game.shake:0;
   ctx.save();ctx.translate(Math.sin(game.elapsed*91.7)*shake,0);
-  drawStadium();drawGoals();drawPlayer(game.p1);drawPlayer(game.p2);drawBall(game.ball);drawParticles();if(debugEnabled)drawDebugOverlay();
+  drawStadium();drawGoals();drawPlayer(game.p1,alpha);drawPlayer(game.p2,alpha);drawBall(game.ball,alpha);drawParticles();if(debugEnabled)drawDebugOverlay();
   ctx.restore();
   if(game.countdown>0){$("#countdownOverlay").hidden=false;$("#countdownOverlay").textContent=String(Math.max(1,Math.ceil(game.countdown)));}
   else if(game.celebration>0){$("#countdownOverlay").hidden=true;$("#eventOverlay").hidden=false;$("#eventOverlay").textContent="GOOOAL! ⚽";}
@@ -706,8 +712,8 @@ function drawGoals(){
   if(game.shield[1]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(35,(leftTop+base)/2,45,-Math.PI/2,Math.PI/2);ctx.stroke();}
   if(game.shield[2]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(CONFIG.world.width-35,(rightTop+base)/2,45,Math.PI/2,Math.PI*1.5);ctx.stroke();}
 }
-function drawPlayer(p){
-  const c=characterCard(p.charId),x=p.x,y=p.y,im=images[p.charId];
+function drawPlayer(p,alpha=1){
+  const c=characterCard(p.charId),x=(p.renderPrevX??p.x)+(p.x-(p.renderPrevX??p.x))*alpha,y=(p.renderPrevY??p.y)+(p.y-(p.renderPrevY??p.y))*alpha,im=images[p.charId];
   const bob=p.grounded&&Math.abs(p.vx)>.2?Math.sin(p.anim)*3:0;
   const h=CONFIG.graphics.spriteHeight,w=im? h*im.naturalWidth/im.naturalHeight:CONFIG.graphics.spriteWidthFallback;
   ctx.save();ctx.translate(x,y+bob);
@@ -733,8 +739,10 @@ function drawPlayer(p){
   }
   ctx.restore();
 }
-function drawBall(b){
-  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spin);
+function drawBall(b,alpha=1){
+  const x=(b.renderPrevX??b.x)+(b.x-(b.renderPrevX??b.x))*alpha;
+  const y=(b.renderPrevY??b.y)+(b.y-(b.renderPrevY??b.y))*alpha;
+  ctx.save();ctx.translate(x,y);ctx.rotate(b.spin);
   ctx.fillStyle="#00140866";ctx.beginPath();ctx.ellipse(4,b.r+5,b.r+3,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle=b.fire>0?"#ffac55":"#f7f9ff";ctx.strokeStyle=b.fire>0?"#ff4b24":"#18232c";ctx.lineWidth=2.4;ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();ctx.stroke();
   ctx.fillStyle=b.fire>0?"#a92716":"#14232c";ctx.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,px=Math.cos(a)*7,py=Math.sin(a)*7;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.fill();
@@ -750,7 +758,7 @@ function drawDebugOverlay(){
   ctx.beginPath();ctx.arc(game.p2.x,game.p2.y-CONFIG.physics.headOffset,CONFIG.physics.headRadius*charById(game.p2.charId).head,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle="#ffe77a";ctx.beginPath();ctx.arc(game.ball.x,game.ball.y,game.ball.r,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle="#ffffffaa";ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(CONFIG.world.goalX,CONFIG.world.goalTop);ctx.lineTo(CONFIG.world.goalX,CONFIG.world.groundY);ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX,CONFIG.world.goalTop);ctx.lineTo(CONFIG.world.width-CONFIG.world.goalX,CONFIG.world.groundY);ctx.stroke();
-  ctx.setLineDash([]);ctx.fillStyle="#fff";ctx.font="bold 18px monospace";ctx.textAlign="left";ctx.fillText("FPS "+Math.round(1/Math.max(1/60,.001))+" | SIM 240Hz",18,32);
+  ctx.setLineDash([]);ctx.fillStyle="#fff";ctx.font="bold 18px monospace";ctx.textAlign="left";ctx.fillText("FPS "+debugFps+" | SIM 240Hz",18,32);
   ctx.restore();
 }
 function setupDebugControls(){
