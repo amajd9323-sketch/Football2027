@@ -184,7 +184,7 @@ function characterCard(id){return charById(id);}
 function createPlayer(id,x,charId){
   const c=characterCard(charId);
   const powers=selectedPowers.map(powerId=>({id:powerId,charge:0,used:false}));
-  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,jumpSoundPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
+  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,jumpSoundPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,ballTouchCooldown:0,powers,shield:0,frozen:0,anim:0};
 }
 function createWorld(){
   return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
@@ -433,6 +433,8 @@ function updatePowerTimers(p,dt){
 const SIM_EVENT = Object.freeze({JUMP:1,KICK_START:2,KICK:4,HEADER:8,STOMP:16,GOAL:32,SHIELD:64,PLAYER_HIT:128,POWER:256,POWER_FAILED:512});
 function approachZero(value,amount){if(value>0)return Math.max(0,value-amount);if(value<0)return Math.min(0,value+amount);return 0;}
 function touchCharge(player){
+  if(player.ballTouchCooldown>0)return;
+  player.ballTouchCooldown=.1;
   for(let i=0;i<player.powers.length;i++){
     const slot=player.powers[i];
     slot.charge=Math.min(1,slot.charge+CONFIG.physics.powerTouchCharge);
@@ -550,7 +552,9 @@ function updateAI(dt){
 function step(state,inputFrame,dt){
   let events=0;
   const p1=state.p1,p2=state.p2,b=state.ball;
-  /* تلتقط المحاكاة حواف القفز والركل نفسها؛ مصدر الأوامر لا يهم. */
+  p1.ballTouchCooldown=Math.max(0,(p1.ballTouchCooldown||0)-dt);
+  p2.ballTouchCooldown=Math.max(0,(p2.ballTouchCooldown||0)-dt);
+  /* تلتقط المحاكاة حواف القفز والركل والقوى نفسها؛ مصدر الأوامر لا يهم. */
   if(inputFrame[1].jump&&!p1.jumpInputPrev){p1.jumpBuffer=CONFIG.physics.jumpBuffer;events|=SIM_EVENT.JUMP;}
   p1.jumpInputPrev=!!inputFrame[1].jump;
   if(inputFrame[1].kick&&!p1.kickInputPrev&&p1.kickCooldown<=0){p1.kickTimer=CONFIG.physics.kickDuration;p1.kickCooldown=CONFIG.physics.kickCooldown;p1.kickApplied=false;events|=SIM_EVENT.KICK_START;}
