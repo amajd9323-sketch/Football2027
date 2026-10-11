@@ -45,6 +45,13 @@ const CONFIG = Object.freeze({
   graphics: { spriteHeight: 206, spriteWidthFallback: 100, particleLimit: 110, shake: 7 }
 });
 
+const PHASE = Object.freeze({
+  MENU:"MENU",SELECT:"SELECT",MATCHMAKING:"MATCHMAKING",
+  COUNTDOWN:"COUNTDOWN",PLAYING:"PLAYING",GOAL:"GOAL",
+  TIME_UP:"TIME_UP",GOLDEN:"GOLDEN",RESULT:"RESULT",
+  SETTINGS:"SETTINGS",PAUSED:"PAUSED"
+});
+let appPhase=PHASE.MENU;
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const CHARACTERS = [
@@ -94,7 +101,9 @@ const canvas=$("#pitch"),ctx=canvas.getContext("2d");
 let stadiumGradient=null,powerButtons=[];
 
 function goScreen(id){
-  $$(".screen").forEach(s=>s.hidden=s.id!==id);
+  const screenPhases={menuScreen:PHASE.MENU,setupScreen:PHASE.SELECT,settingsScreen:PHASE.SETTINGS,matchScreen:game?game.phase:PHASE.COUNTDOWN,resultScreen:PHASE.RESULT};
+  appPhase=screenPhases[id]||appPhase;
+  $(".screen").forEach(s=>s.hidden=s.id!==id);
   if(id==="matchScreen")resizeCanvas();
   if(id==="menuScreen")updateProfileUI();
 }
@@ -187,7 +196,7 @@ function createPlayer(id,x,charId){
   return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,jumpSoundPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,ballTouchCooldown:0,powers,shield:0,frozen:0,anim:0};
 }
 function createWorld(){
-  return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
+  return {phase:PHASE.COUNTDOWN,resumePhase:PHASE.PLAYING,p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
     ball:{x:CONFIG.world.width/2,y:-25,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-25},
     scoreA:0,scoreB:0,remaining:CONFIG.timing.matchSeconds,countdown:CONFIG.timing.countdownSeconds,
     celebration:0,slowTimer:0,goldenGoal:false,goldenRemaining:CONFIG.timing.goldenGoalAfter,over:false,bigGoal:{1:0,2:0},shield:{1:0,2:0},
@@ -294,8 +303,12 @@ $("#rematchBtn").addEventListener("click",()=>startMatch());
 $("#resultSetupBtn").addEventListener("click",()=>{renderSetup();goScreen("setupScreen");});
 $("#resultMenuBtn").addEventListener("click",()=>goScreen("menuScreen"));
 function togglePause(){
-  if(!started||finished)return;paused=!paused;if(paused)clearMatchInputs();$("#pauseOverlay").hidden=!paused;
-  $("#pauseBtn").textContent=paused?"▶":"Ⅱ";
+  if(!started||finished)return;
+  if(!paused&&game)game.resumePhase=game.phase;
+  paused=!paused;
+  if(paused){clearMatchInputs();if(game)game.phase=PHASE.PAUSED;appPhase=PHASE.PAUSED;}
+  else{if(game)game.phase=game.resumePhase||PHASE.PLAYING;appPhase=game?game.phase:appPhase;}
+  $("#pauseOverlay").hidden=!paused;$("#pauseBtn").textContent=paused?"▶":"Ⅱ";
   if(!paused){lastFrame=performance.now();accumulator=0;}
 }
 function prepareMatchDisplay(){
@@ -382,15 +395,17 @@ function processInputActions(){
 function updateGame(dt){
   if(!game||game.over||finished)return;
   if(game.countdown>0){
+    game.phase=PHASE.COUNTDOWN;appPhase=PHASE.COUNTDOWN;
     game.countdown-=dt;
     const digit=Math.ceil(game.countdown);
     $("#countdownOverlay").hidden=game.countdown<=0;
     $("#countdownOverlay").textContent=String(Math.max(1,digit));
-    if(game.countdown<=0){game.countdown=0;game.ball.y=90;game.ball.vx=0;game.ball.vy=0;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;playSound("whistle");}
+    if(game.countdown<=0){game.countdown=0;game.phase=game.goldenGoal?PHASE.GOLDEN:PHASE.PLAYING;appPhase=game.phase;game.ball.y=90;game.ball.vx=0;game.ball.vy=0;game.ball.renderPrevX=game.ball.x;game.ball.renderPrevY=game.ball.y;playSound("whistle");}
     return;
   }
   $("#countdownOverlay").hidden=true;
   game.elapsed+=dt;
+  game.phase=game.celebration>0?PHASE.GOAL:(game.goldenGoal?PHASE.GOLDEN:PHASE.PLAYING);appPhase=game.phase;
   if(game.celebration>0){
     const celebratoryRate=game.slowTimer>0?.4:1;
     game.p1.anim+=dt*8*celebratoryRate;game.p2.anim+=dt*8*celebratoryRate;
@@ -406,6 +421,7 @@ function updateGame(dt){
     if(game.remaining<=0){
       game.remaining=0;
       if(game.scoreA===game.scoreB){
+        game.phase=PHASE.TIME_UP;appPhase=PHASE.TIME_UP;
         game.goldenGoal=true;game.goldenRemaining=CONFIG.timing.goldenGoalAfter;game.banner="الهدف الذهبي!";game.bannerTime=2.5;game.countdown=CONFIG.timing.countdownSeconds;game.ball={x:CONFIG.world.width/2,y:-CONFIG.physics.ballRadius-8,renderPrevX:CONFIG.world.width/2,renderPrevY:-CONFIG.physics.ballRadius-8,vx:0,vy:0,r:CONFIG.physics.ballRadius,fire:0,fireOwner:0,spin:0,prevX:CONFIG.world.width/2,prevY:-CONFIG.physics.ballRadius-8};$("#goldenOverlay").hidden=false;
       }else{finishGame();return;}
     }
@@ -709,6 +725,7 @@ function step(state,inputFrame,dt){
 }
 function scoreGoal(scoringPlayer){
   if(game.celebration>0)return;
+  game.phase=PHASE.GOAL;appPhase=PHASE.GOAL;
   clearMatchInputs();
   if(scoringPlayer===1)game.scoreA++;else game.scoreB++;
   $("#scoreLeft").textContent=game.scoreA;$("#scoreRight").textContent=game.scoreB;
@@ -721,6 +738,7 @@ function scoreGoal(scoringPlayer){
 }
 function simRandom(){if(!game)return .5;game.rng=(Math.imul(game.rng,1664525)+1013904223)>>>0;return game.rng/4294967296;}
 function kickoff(){
+  game.phase=PHASE.COUNTDOWN;appPhase=PHASE.COUNTDOWN;
   clearMatchInputs();
   game.p1.x=330;game.p2.x=950;game.p1.y=game.p2.y=CONFIG.world.groundY;
   game.p1.vx=game.p1.vy=game.p2.vx=game.p2.vy=0;game.p1.grounded=game.p2.grounded=true;
@@ -730,7 +748,7 @@ function kickoff(){
   game.countdown=CONFIG.timing.countdownSeconds;$("#countdownOverlay").hidden=false;$("#countdownOverlay").textContent="3";
 }
 function finishGame(){
-  if(finished)return;finished=true;game.over=true;stopLoop();
+  if(finished)return;finished=true;game.over=true;game.phase=PHASE.RESULT;appPhase=PHASE.RESULT;stopLoop();
   const a=game.scoreA,b=game.scoreB,draw=a===b,winner=a>b?1:b>a?2:0;
   let reward=draw?CONFIG.rewards.draw:(winner===1?CONFIG.rewards.win:CONFIG.rewards.loss);
   saved.played++;if(winner===1){saved.wins++;saved.streak++;saved.bestStreak=Math.max(saved.bestStreak,saved.streak);saved.cups+=3;}else if(winner===2){saved.cups=Math.max(0,saved.cups-1);saved.streak=0;}else{saved.streak=0;}
