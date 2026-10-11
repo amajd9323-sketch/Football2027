@@ -83,7 +83,7 @@ function updateProfileUI(){
 let mode="ai",activeAssign=1,difficulty="normal";
 let chosen={1:"roksi",2:"hema"};
 let selectedPowers=["freeze","fireball","giantJump"];
-let game=null,raf=0,lastFrame=0,accumulator=0,started=false,paused=false,finished=false;
+let game=null,raf=0,lastFrame=0,accumulator=0,started=false,paused=false,finished=false,debugEnabled=false;
 let inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};
 let images={};
 let audioContext=null,musicTimer=null,musicIndex=0;
@@ -220,8 +220,9 @@ function renderControls(){
 function onGameKeyDown(e){
   if(!started||$("#matchScreen").hidden)return;
   const k=e.key.toLowerCase();
-  const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9","escape"];
+  const gameKeys=["a","d","w"," ","1","2","3","arrowleft","arrowright","arrowup","enter","7","8","9","escape","f2"];
   if(gameKeys.includes(k))e.preventDefault();
+  if(k==="f2"){debugEnabled=!debugEnabled;$("#debugPanel").hidden=!debugEnabled;return;}
   getAudio();
   if(k==="a")inputs[1].left=true;
   else if(k==="d")inputs[1].right=true;
@@ -285,7 +286,7 @@ function prepareMatchDisplay(){
   }catch{}
 }
 function startMatch(){
-  started=true;paused=false;finished=false;mode=mode==="local"?"local":"ai";
+  started=true;paused=false;finished=false;debugEnabled=false;$("#debugPanel").hidden=true;mode=mode==="local"?"local":"ai";
   prepareMatchDisplay();
   game=createWorld();inputs={1:{left:false,right:false,jump:false,kick:false,power:""},2:{left:false,right:false,jump:false,kick:false,power:""}};particles.length=0;
   $("#scoreLeft").textContent="0";$("#scoreRight").textContent="0";$("#pauseOverlay").hidden=true;$("#eventOverlay").hidden=true;$("#goldenOverlay").hidden=true;
@@ -303,6 +304,7 @@ function stopLoop(){cancelAnimationFrame(raf);started=false;paused=false;}
 function frame(now){
   if(!started||$("#matchScreen").hidden)return;
   let elapsed=Math.min(.1,(now-lastFrame)/1000);lastFrame=now;
+  if(debugEnabled)$("#debugFps").textContent=String(Math.round(1/Math.max(elapsed,.001)));
   if(!paused){accumulator+=elapsed;while(accumulator>=CONFIG.timing.fixedStep){updateGame(CONFIG.timing.fixedStep);accumulator-=CONFIG.timing.fixedStep;if(finished)break;}}
   drawGame(accumulator/CONFIG.timing.fixedStep);
   raf=requestAnimationFrame(frame);
@@ -669,7 +671,7 @@ function drawGame(alpha){
   ctx.setTransform(sx,0,0,sy,0,0);
   const shake=game.shake>0?Math.sin(game.elapsed*90)*game.shake:0;
   ctx.save();ctx.translate(Math.sin(game.elapsed*91.7)*shake,0);
-  drawStadium();drawGoals();drawPlayer(game.p1);drawPlayer(game.p2);drawBall(game.ball);drawParticles();
+  drawStadium();drawGoals();drawPlayer(game.p1);drawPlayer(game.p2);drawBall(game.ball);drawParticles();if(debugEnabled)drawDebugOverlay();
   ctx.restore();
   if(game.countdown>0){$("#countdownOverlay").hidden=false;$("#countdownOverlay").textContent=String(Math.max(1,Math.ceil(game.countdown)));}
   else if(game.celebration>0){$("#countdownOverlay").hidden=true;$("#eventOverlay").hidden=false;$("#eventOverlay").textContent="GOOOAL! ⚽";}
@@ -741,6 +743,32 @@ function drawBall(b){
   ctx.restore();
 }
 function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.max(0,Math.min(1,p.life));ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
+function drawDebugOverlay(){
+  ctx.save();
+  ctx.lineWidth=3;ctx.strokeStyle="#ff4c6a";ctx.fillStyle="#ff4c6a";
+  ctx.beginPath();ctx.arc(game.p1.x,game.p1.y-CONFIG.physics.headOffset,CONFIG.physics.headRadius*charById(game.p1.charId).head,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(game.p2.x,game.p2.y-CONFIG.physics.headOffset,CONFIG.physics.headRadius*charById(game.p2.charId).head,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle="#ffe77a";ctx.beginPath();ctx.arc(game.ball.x,game.ball.y,game.ball.r,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle="#ffffffaa";ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(CONFIG.world.goalX,CONFIG.world.goalTop);ctx.lineTo(CONFIG.world.goalX,CONFIG.world.groundY);ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX,CONFIG.world.goalTop);ctx.lineTo(CONFIG.world.width-CONFIG.world.goalX,CONFIG.world.groundY);ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle="#fff";ctx.font="bold 18px monospace";ctx.textAlign="left";ctx.fillText("FPS "+Math.round(1/Math.max(1/60,.001))+" | SIM 240Hz",18,32);
+  ctx.restore();
+}
+function setupDebugControls(){
+  const fields=[
+    ["debugGravity","debugGravityValue","gravity"],
+    ["debugBallGravity","debugBallGravityValue","ballGravity"],
+    ["debugSpeed","debugSpeedValue","maxRunSpeed"],
+    ["debugKickForce","debugKickValue","kickForce"]
+  ];
+  for(let i=0;i<fields.length;i++){
+    const input=$("#"+fields[i][0]),output=$("#"+fields[i][1]),key=fields[i][2];
+    input.value=String(CONFIG.physics[key]);output.textContent=String(CONFIG.physics[key]);
+    input.addEventListener("input",()=>{
+      CONFIG.physics[key]=Number(input.value);output.textContent=input.value;
+    });
+  }
+}
+
 
 function getAudio(){
   if(!saved.sound&&!saved.music)return null;
@@ -773,4 +801,4 @@ function showToast(message){
   if($("#matchScreen").hidden){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.querySelector(".app").appendChild(t);}t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1900);}
   else{el.textContent=message;el.hidden=false;setTimeout(()=>{if(game&&game.celebration<=0)el.hidden=true;},1300);}
 }
-applyScale();applyControlOpacity();updateProfileUI();renderSetup();setMusic(saved.music);
+setupDebugControls();applyScale();applyControlOpacity();updateProfileUI();renderSetup();setMusic(saved.music);
