@@ -61,3 +61,13 @@
 
 .match-toast{position:absolute;z-index:4;left:50%;top:12px;transform:translateX(-50%);max-width:85%;padding:10px 16px;border:1px solid #c7ff56;border-radius:13px;background:#07111dec;color:#f6faff;font-size:clamp(12px,2.2vw,20px);font-weight:800;text-align:center;box-shadow:0 8px 26px #0008;pointer-events:none;opacity:0;transition:opacity .12s ease,transform .12s ease}
 .match-toast.show{opacity:1;transform:translateX(-50%) translateY(2px)}
+
+/* Larger invisible hit zones keep multi-touch usable on compact Android screens. */
+.control-row button,.power-button{position:relative;overflow:visible;-webkit-touch-callout:none}
+.control-row button::before{content:"";position:absolute;inset:-10px}
+.power-button::before{content:"";position:absolute;inset:-8px}
+@media screen and (orientation:landscape) and (max-height:520px){
+ .control-row .left-button,.control-row .right-button{max-width:96px;min-width:54px}
+ .control-row .jump-button{max-width:100px;min-width:64px}
+ .control-row .kick-button{max-width:120px;min-width:78px}
+}
