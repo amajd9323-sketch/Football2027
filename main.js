@@ -554,11 +554,11 @@ function step(state,inputFrame,dt){
   }else b.vx*=Math.exp(-CONFIG.physics.ballFriction*dt);
 
   const leftTop=goalTopFor(state,1),rightTop=goalTopFor(state,2),bottom=CONFIG.world.goalBottom;
-  if(b.x<CONFIG.world.goalX&&b.y>=leftTop+b.r*.82&&b.y<bottom){
+  if(b.x<CONFIG.world.goalX&&b.y>=leftTop+b.r+CONFIG.world.goalPostRadius&&b.y<bottom){
     if(state.shield[1]>0){b.x=CONFIG.world.goalX+b.r+1;b.vx=Math.abs(b.vx)*1.15;events|=SIM_EVENT.SHIELD;}
     else{state.scoringPlayer=2;state.physicsEvents=events|SIM_EVENT.GOAL;return state.physicsEvents;}
   }
-  if(b.x>CONFIG.world.width-CONFIG.world.goalX&&b.y>=rightTop+b.r*.82&&b.y<bottom){
+  if(b.x>CONFIG.world.width-CONFIG.world.goalX&&b.y>=rightTop+b.r+CONFIG.world.goalPostRadius&&b.y<bottom){
     if(state.shield[2]>0){b.x=CONFIG.world.width-CONFIG.world.goalX-b.r-1;b.vx=-Math.abs(b.vx)*1.15;events|=SIM_EVENT.SHIELD;}
     else{state.scoringPlayer=1;state.physicsEvents=events|SIM_EVENT.GOAL;return state.physicsEvents;}
   }
