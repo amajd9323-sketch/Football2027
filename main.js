@@ -184,7 +184,7 @@ function characterCard(id){return charById(id);}
 function createPlayer(id,x,charId){
   const c=characterCard(charId);
   const powers=selectedPowers.map(powerId=>({id:powerId,charge:0,used:false}));
-  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
+  return {id,charId,x,y:CONFIG.world.groundY,prevX:x,prevY:CONFIG.world.groundY,renderPrevX:x,renderPrevY:CONFIG.world.groundY,vx:0,vy:0,dir:id===1?1:-1,grounded:true,aiMultiplier:(id===2&&mode==="ai"?(CONFIG.ai[difficulty]?.speed||1):1),coyoteTimer:CONFIG.physics.coyoteTime,jumpBuffer:0,jumpInputPrev:false,kickInputPrev:false,powerInputPrev:"",stun:0,giant:0,speedBoost:0,kickTimer:0,kickCooldown:0,kickApplied:false,powers,shield:0,frozen:0,anim:0};
 }
 function createWorld(){
   return {p1:createPlayer(1,330,chosen[1]),p2:createPlayer(2,950,chosen[2]),
@@ -491,7 +491,7 @@ function movePlayerSim(p,inp,dt){
   }else{
     const direction=(inp.right?1:0)-(inp.left?1:0);
     const c=charById(p.charId);
-    const topSpeed=CONFIG.physics.maxRunSpeed*(c.speed/5)*(p.speedBoost>0?1.4:1);
+    const topSpeed=CONFIG.physics.maxRunSpeed*(c.speed/5)*(p.speedBoost>0?1.4:1)*(p.aiMultiplier||1);
     if(direction){p.dir=direction;p.vx+=direction*(p.grounded?CONFIG.physics.runAcceleration:CONFIG.physics.airAcceleration)*dt;}
     else p.vx=approachZero(p.vx,(p.grounded?CONFIG.physics.stopAcceleration:CONFIG.physics.stopAcceleration*.18)*dt);
     if(p.vx>topSpeed)p.vx=topSpeed;if(p.vx< -topSpeed)p.vx=-topSpeed;
@@ -709,8 +709,8 @@ function drawGoals(){
   ctx.strokeStyle="#ffffff65";ctx.lineWidth=1;
   for(let y=leftTop+10;y<base;y+=14){ctx.beginPath();ctx.moveTo(1,y);ctx.lineTo(CONFIG.world.goalX+2,y);ctx.stroke();}
   for(let y=rightTop+10;y<base;y+=14){ctx.beginPath();ctx.moveTo(CONFIG.world.width-CONFIG.world.goalX-2,y);ctx.lineTo(CONFIG.world.width-1,y);ctx.stroke();}
-  if(game.shield[1]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(35,(leftTop+base)/2,45,-Math.PI/2,Math.PI/2);ctx.stroke();}
-  if(game.shield[2]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(CONFIG.world.width-35,(rightTop+base)/2,45,Math.PI/2,Math.PI*1.5);ctx.stroke();}
+  if(game.shield[1]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(CONFIG.world.goalX+4,(leftTop+base)/2,45,-Math.PI/2,Math.PI/2);ctx.stroke();}
+  if(game.shield[2]>0){ctx.strokeStyle="#66d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(CONFIG.world.width-CONFIG.world.goalX-4,(rightTop+base)/2,45,Math.PI/2,Math.PI*1.5);ctx.stroke();}
 }
 function drawPlayer(p,alpha=1){
   const c=characterCard(p.charId),x=(p.renderPrevX??p.x)+(p.x-(p.renderPrevX??p.x))*alpha,y=(p.renderPrevY??p.y)+(p.y-(p.renderPrevY??p.y))*alpha,im=images[p.charId];
