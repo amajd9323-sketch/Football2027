@@ -54,3 +54,35 @@
   .pad-row button{min-height:34px;font-size:13px}
   .player-pad>small{font-size:6px;margin-bottom:3px}
 }
+
+
+/* Personalized Roksi × Hema branding */
+.brand-mark{overflow:hidden;transform:none;background:#102536;border:1px solid #c7ff5666;box-shadow:0 0 18px #c7ff5622}
+.brand-mark img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.12)}
+.hero-art{overflow:visible}
+.hero-logo-wrap{position:absolute;z-index:3;left:31%;right:31%;top:24%;height:62%;display:flex;align-items:center;justify-content:center;border-radius:16px;padding:3px;background:linear-gradient(140deg,#c7ff5699,#ffffff33,#ff785799);box-shadow:0 10px 30px #0007}
+.hero-logo{width:100%;height:100%;display:block;object-fit:cover;object-position:center;border-radius:13px;border:1px solid #f7f4dfaa}
+.hero-person{position:absolute;bottom:0;width:35%;height:83%;object-fit:contain;object-position:center bottom;z-index:2;filter:drop-shadow(0 9px 7px #0007)}
+.hero-roksi{right:-2%}.hero-hema{left:-2%}
+.hero-ball{z-index:4;right:45%;bottom:4%;font-size:28px}
+.hero-spark{z-index:4;top:9%;right:48%;font-size:25px}
+.couple-banner{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px;margin:9px 0 6px;border-radius:13px;border:1px solid #3b4d43;background:linear-gradient(120deg,#1a2929,#152738)}
+.couple-profile{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.couple-profile img{height:51px;width:37px;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 2px 4px #0008)}
+.couple-profile b{display:block;color:#fff;font-size:10px;letter-spacing:.4px}
+.couple-profile small{display:block;color:#b0c0cc;font-size:7px;letter-spacing:.5px;margin-top:4px;white-space:nowrap}
+.couple-profile-hema{flex-direction:row-reverse;text-align:left}
+.couple-vs{color:var(--lime);font-weight:900;font-size:14px;font-style:italic}
+.couple-play{background:#c7ff56;color:#15220a;border-radius:9px;padding:9px 11px;font-size:9px;font-weight:900;white-space:nowrap}
+.couple-record{padding:0 7px 6px;color:#91a6b6;font-size:9px;text-align:center;font-variant-numeric:tabular-nums}
+@media screen and (orientation:landscape) and (max-height:520px){
+ .hero-logo-wrap{left:33%;right:33%;top:12%;height:70%;padding:2px;border-radius:9px}
+ .hero-logo{border-radius:7px}
+ .hero-person{height:90%;width:33%}
+ .hero-ball{font-size:19px;bottom:0}.hero-spark{font-size:19px;top:0}
+ .couple-banner{padding:5px 7px;margin:5px 0 2px;gap:5px;border-radius:10px}
+ .couple-profile img{height:35px;width:26px}
+ .couple-profile b{font-size:8px}.couple-profile small{font-size:6px;margin-top:2px}
+ .couple-vs{font-size:10px}.couple-play{font-size:8px;padding:7px 8px}
+ .couple-record{font-size:7px;padding-bottom:3px}
+}

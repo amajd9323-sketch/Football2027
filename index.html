@@ -11,7 +11,7 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand-mark">F<span>27</span></div>
+    <div class="brand-mark"><img src="./assets/game-logo.webp" alt="شعار اللعبة"></div>
     <div class="brand-copy"><b>FOOTBALL <i>2027</i></b><small>ARCADE FOOTBALL ARENA</small></div>
     <div class="net-pill"><span class="pulse"></span><span id="netBadge">جاهز للعب</span></div>
   </header>
@@ -24,12 +24,12 @@
         <p>واجه الكمبيوتر، العب مع صديقك، أو تحدّاه أونلاين بكود غرفة.</p>
         <div class="hero-meta"><span>⚡ حركات خاصة</span><span>⏱ 90 ثانية</span><span>⚽ 1 ضد 1</span></div>
       </div>
-      <div class="hero-art" aria-hidden="true">
+      <div class="hero-art" aria-label="Roksi وريال مدريد ضد Hema وBarcelona">
         <div class="orb orb-a"></div><div class="orb orb-b"></div>
-        <div class="hero-player red"><div class="hero-head">😎</div><div class="hero-body"></div><div class="hero-legs"></div></div>
-        <div class="hero-ball">⚽</div>
-        <div class="hero-player blue"><div class="hero-head">😤</div><div class="hero-body"></div><div class="hero-legs"></div></div>
-        <div class="hero-spark">✦</div>
+        <img class="hero-person hero-roksi" src="./assets/roksi.webp" alt="">
+        <div class="hero-logo-wrap"><img class="hero-logo" src="./assets/game-logo.webp" alt="شعار كلاسيكو روكسي وهيما"></div>
+        <img class="hero-person hero-hema" src="./assets/hema.webp" alt="">
+        <div class="hero-ball">⚽</div><div class="hero-spark">✦</div>
       </div>
     </section>
 
@@ -51,6 +51,13 @@
 
       <div class="settings-panel">
         <div class="section-heading compact"><div><span class="eyebrow">YOUR LINEUP</span><h2>اختَر ألوان فريقك</h2></div><span class="small-tag">10 CLUBS</span></div>
+        <div class="couple-banner">
+          <div class="couple-profile"><img src="./assets/roksi.webp" alt=""><div><b>ROKSI</b><small>REAL MADRID · QUEEN</small></div></div>
+          <span class="couple-vs">VS</span>
+          <div class="couple-profile couple-profile-hema"><img src="./assets/hema.webp" alt=""><div><b>HEMA / IBI</b><small>BARCELONA · KING</small></div></div>
+          <button id="coupleMatchBtn" class="couple-play" type="button">💞 كلاسيكو الحب</button>
+        </div>
+        <div id="coupleRecord" class="couple-record">سجل المواجهات • روكسي 0 — هيما 0</div>
         <div class="club-grid" id="teamGrid"></div>
         <div class="power-select">
           <div><b>قدرتك الخاصة</b><small>اختر حركة تغيّر المباراة</small></div>

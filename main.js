@@ -128,7 +128,7 @@ window.addEventListener("orientationchange",()=>setTimeout(fitCanvas,200));
 
 function playerJump(p){if(p.ground){p.vy=-13.5;p.ground=false;p.jumpAnim=1;}}
 function playerKick(p,extra){
-  if(!world)return;const b=world.ball;const hx=p.x+p.dir*12,hy=p.y-79;
+  if(!world)return;const b=world.ball;const hx=p.x+p.dir*12,hy=p.y-120;
   if(Math.hypot(b.x-hx,b.y-hy)<108||Math.abs(b.x-p.x)<94){
     b.vx=p.dir*(extra?22:14)+p.vx*.55;b.vy=extra?-9:-6.2;
   }else{b.vx=p.dir*(extra?15:9);b.vy=extra?-7:-3.5;}
@@ -210,7 +210,7 @@ function updateGame(dt){
   updateHud();
 }
 function collidePlayer(p,b){
-  const giant=p.giant>0?1.27:1,headX=p.x+p.dir*2,headY=p.y-83*giant,headR=28*giant;
+  const giant=p.giant>0?1.27:1,headX=p.x+p.dir*2,headY=p.y-122*giant,headR=29*giant;
   let dx=b.x-headX,dy=b.y-headY,d=Math.hypot(dx,dy),min=b.r+headR;
   if(d<min&&d>0){const nx=dx/d,ny=dy/d;b.x=headX+nx*(min+1);b.y=headY+ny*(min+1);b.vx+=nx*(1.8+p.vx*.5);b.vy+=ny*2.2-1;}
   if(Math.abs(b.x-p.x)<27*giant+b.r&&b.y>p.y-61*giant&&b.y<p.y-17){b.vx+=(b.x<p.x?-1:1)*1.2;b.vy-=.7;}
@@ -227,7 +227,11 @@ function updateHud(){
 }
 function showFlash(text){const el=$("#matchFlash");el.textContent=text;el.classList.add("show");clearTimeout(flashTimeout);flashTimeout=setTimeout(()=>el.classList.remove("show"),950);}
 function showFinish(w){
-  if(!w)return;finished=true;paused=false;w.over=true;$("#pauseCover").hidden=true;$("#finishCover").hidden=false;$("#gameScreen").classList.add("match-ended");$("#finishA").textContent=w.scoreA;$("#finishB").textContent=w.scoreB;
+  if(!w||finished)return;finished=true;paused=false;w.over=true;$("#pauseCover").hidden=true;$("#finishCover").hidden=false;$("#gameScreen").classList.add("match-ended");$("#finishA").textContent=w.scoreA;$("#finishB").textContent=w.scoreB;
+  const stats=loadCoupleStats();stats.matches=(stats.matches||0)+1;
+  if(w.scoreA>w.scoreB)stats.roksiWins=(stats.roksiWins||0)+1;else if(w.scoreB>w.scoreA)stats.hemaWins=(stats.hemaWins||0)+1;else stats.draws=(stats.draws||0)+1;
+  try{localStorage.setItem(COUPLE_STATS_KEY,JSON.stringify(stats));}catch{}
+  updateCoupleRecord();
   const scoreA=w.scoreA,scoreB=w.scoreB;
   $("#finishTitle").textContent=scoreA===scoreB?"تعادل!":scoreA>scoreB?"فوز رائع!":"حاول مرة أخرى";
   $("#finishMessage").textContent=scoreA===scoreB?"مباراة متكافئة حتى النهاية.":(scoreA>scoreB?CLUBS[clubA].short:CLUBS[clubB].short)+" حسم المواجهة!";
@@ -275,21 +279,31 @@ function drawGoals(){
   for(let x=5;x<28;x+=8){ctx.beginPath();ctx.moveTo(x,GOAL_TOP);ctx.lineTo(x,GOAL_BOTTOM);ctx.moveTo(W-x,GOAL_TOP);ctx.lineTo(W-x,GOAL_BOTTOM);ctx.stroke();}
 }
 function drawCharacter(p){
-  const x=p.x,y=p.y,giant=p.giant>0?1.25:1,head=p.id===1?"😎":"😤";ctx.save();ctx.translate(x,y);ctx.scale(giant,giant);
-  ctx.fillStyle="#04130c55";ctx.beginPath();ctx.ellipse(0,5,35,8,0,0,Math.PI*2);ctx.fill();
+  const x=p.x,y=p.y,giant=p.giant>0?1.22:1;
+  const sprite=p.id===1?spriteImages.roksi:spriteImages.hema;
+  const bob=Math.abs(p.vx)>0?Math.sin(world.elapsed*12+p.id)*3:Math.sin(world.elapsed*3+p.id)*1.2;
+  const height=(p.giant>0?218:184),width=sprite&&sprite.naturalWidth?sprite.naturalWidth/sprite.naturalHeight*height:76;
+  ctx.save();ctx.translate(x,y+bob);ctx.scale(giant,giant);
+  ctx.fillStyle="#04130c66";ctx.beginPath();ctx.ellipse(0,4,width*.43,9,0,0,Math.PI*2);ctx.fill();
+  if(p.giant>0){ctx.strokeStyle="#d6ff64";ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,-height*.47,width*.64,height*.52,0,0,Math.PI*2);ctx.stroke();}
+  if(p.frozen>0){ctx.strokeStyle="#a5e9ff";ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,-height*.47,width*.61,height*.52,0,0,Math.PI*2);ctx.stroke();}
+  if(sprite&&sprite.complete&&sprite.naturalWidth>0){
+    if(p.kick>0)ctx.rotate(p.dir*.08);
+    ctx.drawImage(sprite,-width/2,-height,width,height);
+    ctx.fillStyle="#fff6dc";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.strokeStyle="#0a1621";ctx.lineWidth=3;
+    ctx.strokeText(p.id===1?"ROKSI":"HEMA / IBI",0,-height-6);ctx.fillText(p.id===1?"ROKSI":"HEMA / IBI",0,-height-6);
+    if(p.frozen>0){ctx.font="20px sans-serif";ctx.fillText("❄",0,-height-19);}
+    ctx.restore();return;
+  }
   const kicking=p.kick>0,legShift=kicking?p.dir*13:Math.sin(world.elapsed*9+p.id)*4;
   ctx.strokeStyle="#e7edf4";ctx.lineWidth=12;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-10,-19);ctx.lineTo(-15+legShift,-3);ctx.lineTo(-20+legShift,-1);ctx.moveTo(10,-19);ctx.lineTo(16-legShift*.5,-4);ctx.lineTo(23-legShift*.5,-2);ctx.stroke();
   ctx.strokeStyle="#152533";ctx.lineWidth=17;ctx.beginPath();ctx.moveTo(-18+legShift,-2);ctx.lineTo(-6+legShift,-2);ctx.moveTo(12-legShift*.5,-3);ctx.lineTo(26-legShift*.5,-3);ctx.stroke();
-  ctx.fillStyle=p.color;roundedRect(ctx,-26,-65,52,47,12);ctx.fill();ctx.strokeStyle="#ffffffaa";ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=p.color;roundedRect(ctx,-26,-65,52,47,12);ctx.fill();
   ctx.fillStyle="#ffffff";ctx.font="bold 19px sans-serif";ctx.textAlign="center";ctx.fillText(p.id===1?"27":"11",0,-36);
-  ctx.fillStyle="#ecc29e";ctx.beginPath();ctx.arc(0,-86,29,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#5a392c";ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle="#33241f";ctx.beginPath();ctx.arc(0,-94,28,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-27,-95,54,8);
+  ctx.fillStyle="#ecc29e";ctx.beginPath();ctx.arc(0,-86,29,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#33241f";ctx.beginPath();ctx.arc(0,-94,28,Math.PI,Math.PI*2);ctx.fill();
   ctx.fillStyle="#18222b";ctx.beginPath();ctx.ellipse(-10,-85,6,4,0,0,Math.PI*2);ctx.ellipse(10,-85,6,4,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-10,-85,2,0,Math.PI*2);ctx.arc(10,-85,2,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle="#7a4134";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-76,8,.15,Math.PI-.15);ctx.stroke();
-  ctx.fillStyle="#f3dfbc";ctx.font="bold 10px sans-serif";ctx.fillText(p.id===1?"HERO":"ACE",0,-124);
-  if(p.frozen>0){ctx.strokeStyle="#a5e9ff";ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,-68,44,0,Math.PI*2);ctx.stroke();ctx.font="18px sans-serif";ctx.fillText("❄️",0,-134);}
-  if(p.giant>0){ctx.strokeStyle="#d6ff64";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,-67,47,0,Math.PI*2);ctx.stroke();}
+  ctx.fillStyle="#f3dfbc";ctx.font="bold 10px sans-serif";ctx.fillText(p.id===1?"ROKSI":"HEMA",0,-124);
   ctx.restore();
 }
 function drawBall(b){
@@ -301,4 +315,21 @@ function drawBall(b){
 }
 
 setSelectedMode("ai");
-setStatus("جاهز للمباراة. وضع الكمبيوتر يعمل دون إنترنت.","جاهز للعب");
+const spriteImages={roksi:new Image(),hema:new Image()};
+spriteImages.roksi.src="./assets/roksi.webp";
+spriteImages.hema.src="./assets/hema.webp";
+const COUPLE_STATS_KEY="football2027_couple_stats_v1";
+function loadCoupleStats(){
+  try{return JSON.parse(localStorage.getItem(COUPLE_STATS_KEY)||'{"matches":0,"roksiWins":0,"hemaWins":0,"draws":0}');}
+  catch{return {matches:0,roksiWins:0,hemaWins:0,draws:0};}
+}
+function updateCoupleRecord(){
+  const s=loadCoupleStats();const el=$("#coupleRecord");
+  if(el)el.textContent="سجل المواجهات • روكسي "+s.roksiWins+" — هيما "+s.hemaWins+" • تعادل "+s.draws;
+}
+updateCoupleRecord();
+$("#coupleMatchBtn").addEventListener("click",()=>{
+  clubA=0;clubB=1;powerChoice="rocket";$("#powerSelect").value=powerChoice;
+  renderClubs();setSelectedMode("ai");startGame(false);
+});
+setStatus("جاهز للمباراة. روكسي بالريال مدريد وهيما/إيبي ببرشلونة.","جاهز للعب");

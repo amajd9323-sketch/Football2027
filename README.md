@@ -1,17 +1,17 @@
 # Football 2027 Arena
 
-A mobile-first side-view 2D arcade football game with original Canvas-drawn characters and stadium art. Inspired by the general 1v1 arcade football genre; no Head Ball 2 art, sounds, or branding are reused.
+A personalized 1v1 side-view arcade football game starring Roksi in Real Madrid-inspired white-and-gold colors and Hema / Ibi in Barcelona-inspired blue-and-maroon colors. The central couple illustration is used as the game emblem, with custom avatar sprites. Inspired by the broad arcade-football genre without reusing Head Ball 2 game assets.
 
-## Modes
-- Solo vs AI, playable offline after installation
-- Local two-player match on one device
-- Private online room using PeerJS WebRTC (both devices need internet; some networks need a TURN relay)
+## Modes and extras
+- Solo vs computer, offline after installation
+- Local two-player on one phone
+- Online peer-to-peer room codes using PeerJS/WebRTC (both players need internet; some networks may need a TURN relay)
+- Rocket shot, freeze opponent, giant mode, and arena energy pickups
+- Dedicated "Roksi × Hema Love Clasico" quick match
+- Local couple match record saved on the device
 
 ## Controls
-Move left/right, jump, shoot and use one of three powers: rocket shot, freeze, or giant mode. Match lasts 90 seconds.
+Move left/right, jump, shoot, and trigger the selected special power. Matches last 90 seconds.
 
-## Android build
-GitHub Actions builds on every push to `main`. The workflow installs Node and Java, installs Android SDK platform/build tools, builds the web bundle, creates Capacitor Android, applies landscape orientation to MainActivity, builds the debug APK and uploads `Football2027-debug-apk`.
-
-## Current limits
-This is an arcade prototype. Online peer rooms use a public signaling service and are not guaranteed to connect on every network. Official club badges and player likenesses are not used.
+## Android APK
+Pushes to `main` trigger a GitHub Actions build. The workflow builds Vite, generates Capacitor Android, forces landscape orientation, and uploads a debug APK artifact.
